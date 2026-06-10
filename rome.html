@@ -258,11 +258,11 @@
 </div>
 
 <script>
-const HOME_KEY = "rome_home_base_v4";
+const HOME_KEY = "rome_home_base_v5";
 const TEMP_ORIGIN_KEY = "rome_temp_origin";
 
 const PLACES = [
-  {name:"Elizabeth Unique Hotel", pid:"ChIJz4tK4l9gLxMREJ_7uW7s468", lat:41.9070, lng:12.4773, type:"Hotel", home:true, address:"Via delle Colonnette 35, 00186 Roma", phone:"+39 06 3223633", website:"https://www.elizabethgroup.it/en/elizabeth-unique-rome/", photos:["https://cdn.blastness.biz/media/1303/unique-top/thumbs/full/1920-facciata-1.jpg","https://cdn.blastness.biz/media/1303/unique-vertical-gallery/thumbs/full/1024-vertical-hall-4.jpg","https://cdn.blastness.biz/media/1303/unique-vertical-gallery/thumbs/full/1024-vertical-library-2.jpg"], notes:"Home base. Boutique Design Hotel on Via delle Colonnette 35 — a quiet corner of the Tridente, steps from Piazza del Popolo. Perfect starting point for exploring Rome."},
+  {name:"Elizabeth Unique Hotel", lat:41.9072794, lng:12.4772303, type:"Hotel", home:true, address:"Via delle Colonnette 35, 00186 Roma RM, Italy", phone:"+39 06 3223633", website:"https://www.elizabethgroup.it/en/elizabeth-unique-rome/", photos:["https://cdn.blastness.biz/media/1303/unique-top/thumbs/full/1920-facciata-1.jpg","https://cdn.blastness.biz/media/1303/unique-vertical-gallery/thumbs/full/1024-vertical-hall-4.jpg","https://cdn.blastness.biz/media/1303/unique-vertical-gallery/thumbs/full/1024-vertical-library-2.jpg"], notes:"Home base. Boutique Design Hotel on Via delle Colonnette 35 — a quiet corner of the Tridente, steps from Piazza del Popolo. Perfect starting point for exploring Rome."},
   {name:"Museo della Forma Urbis", pid:"ChIJZ7c578lhLxMR3G-oln-WuLM", lat:41.8872, lng:12.4923, type:"Museum", category:"Destination", address:"Via di San Gregorio, 30, 00184 Roma", notes:"New museum mixing archaeology and cartography. Floor embossed with an 18th-century map + 3rd-century stone slabs. Free archaeological park outside. €11 admission. Last entry 6:15 PM."},
   {name:"Domus Tiberiana (Palatine Hill)", pid:"ChIJA1aK_LRhLxMRJ6Hw0arUiyI", lat:41.8896, lng:12.4875, type:"Ruin", category:"Destination", address:"Palatine Hill, Via di San Gregorio, 00184 Roma", notes:"Reopened in 2023 after decades of closure. Multimedia exhibitions in a 1st-century palace. Prime sunset views of the Forum and Colosseum. Combined ticket with Forum + Colosseum €18, valid 24 hrs."},
   {name:"Uma Roma", pid:"ChIJV59_iGxhLxMRN9TZz9JP0rY", lat:41.8606, lng:12.4720, type:"Restaurant", category:"Food", address:"Via Girolamo Benzoni, 34, 00154 Roma", phone:"+39 334 385 5945", whatsapp:"+39 334 385 5945", notes:"Scandinavian-minimalist trattoria in Garbatella. Fermentation-focused tasting menu by two Italian chefs (one formerly at Noma). 4 courses + 4 snacks €50. Book well ahead — very popular."},
@@ -283,7 +283,7 @@ const PLACES = [
   {name:"Fatamorgana Gelato (Trastevere)", pid:"ChIJkVbVdTlgLxMRL_AfGNHHWhk", lat:41.8890, lng:12.4695, type:"Gelato", category:"Food", address:"Via Roma Libera, 11, 00153 Roma", phone:"+39 06 5833 4204", notes:"Internationally inspired flavors: Mexican Chamoy (tamarind, pepperoncino, Maldon salt) and Pierogi Ruskie (potato, ricotta, red onion, red wine, butter). Two flavors €3."},
   {name:"Ivo a Trastevere", pid:"ChIJLwrxODhgLxMRQEdqiR-QOyk", lat:41.8887, lng:12.4692, type:"Restaurant", category:"Food", address:"Via di San Francesco a Ripa, 158, 00153 Roma", phone:"+39 06 581 7082", notes:"No-nonsense purveyor of classic Roman thin-crust pizzas since the 1960s. Simple, crowded, and beloved. A local institution for Sunday lunch."}
 ];
-const DEFAULT_HOME = { name:PLACES[0].name, lat:PLACES[0].lat, lng:PLACES[0].lng, pid:PLACES[0].pid, placeIdx:0, custom:false };
+const DEFAULT_HOME = { name:PLACES[0].name, lat:PLACES[0].lat, lng:PLACES[0].lng, address:PLACES[0].address, placeIdx:0, custom:false };
 const TYPE_GRADIENT = {
   "Hotel":"linear-gradient(135deg,#c9a227,#8b6914)",
   "Museum":"linear-gradient(135deg,#6b7fb0,#3a4f80)",
@@ -310,12 +310,16 @@ function loadHomeBase(){
     const s = localStorage.getItem(HOME_KEY);
     if(s){
       const h = JSON.parse(s);
-      if(h && typeof h.lat === "number" && typeof h.lng === "number" && h.name) return h;
+      if(h && typeof h.lat === "number" && typeof h.lng === "number" && h.name){
+        if(h.placeIdx === 0) return {...DEFAULT_HOME, ...h, name:DEFAULT_HOME.name, lat:DEFAULT_HOME.lat, lng:DEFAULT_HOME.lng, address:DEFAULT_HOME.address};
+        return h;
+      }
     }
   }catch(e){}
   localStorage.removeItem("rome_home_base");
   localStorage.removeItem("rome_home_base_v2");
   localStorage.removeItem("rome_home_base_v3");
+  localStorage.removeItem("rome_home_base_v4");
   const home = {...DEFAULT_HOME};
   localStorage.setItem(HOME_KEY, JSON.stringify(home));
   return home;
@@ -335,30 +339,43 @@ function saveTempOrigin(o){
   else sessionStorage.removeItem(TEMP_ORIGIN_KEY);
 }
 function getDirectionsOrigin(){ return tempOrigin || homeBase; }
+function placeFor(loc){
+  if(loc.placeIdx != null && PLACES[loc.placeIdx]) return PLACES[loc.placeIdx];
+  return loc;
+}
 function resolvePid(loc){
-  if(loc.pid) return loc.pid;
-  if(loc.placeIdx != null && PLACES[loc.placeIdx]) return PLACES[loc.placeIdx].pid;
-  return null;
+  const place = placeFor(loc);
+  return place.pid || null;
+}
+function endpointLabel(loc){
+  const place = placeFor(loc);
+  const name = place.name;
+  const address = place.address;
+  const lat = place.lat;
+  const lng = place.lng;
+  if(name && address) return `${name}, ${address}`;
+  if(address) return address;
+  if(name) return `${name}, Rome, Italy`;
+  if(lat != null && lng != null) return `${lat},${lng}`;
+  return "";
+}
+function setDirectionsEndpoint(params, role, loc){
+  const label = endpointLabel(loc);
+  if(!label) return;
+  params.set(role, label);
+  const pid = resolvePid(loc);
+  if(pid) params.set(`${role}_place_id`, pid);
 }
 function directionsUrl(p){
   const origin = getDirectionsOrigin();
   const params = new URLSearchParams({ api:"1", travelmode:"driving" });
-  params.set("destination", p.name);
-  if(p.pid) params.set("destination_place_id", p.pid);
-  if(origin){
-    const originPid = resolvePid(origin);
-    if(originPid){
-      params.set("origin", origin.name);
-      params.set("origin_place_id", originPid);
-    } else {
-      params.set("origin", `${origin.lat},${origin.lng}`);
-    }
-  }
+  setDirectionsEndpoint(params, "destination", p);
+  if(origin) setDirectionsEndpoint(params, "origin", origin);
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 function setTempFromPlace(idx){
   const p = PLACES[idx];
-  saveTempOrigin({name:p.name, lat:p.lat, lng:p.lng, pid:p.pid, placeIdx:idx});
+  saveTempOrigin({name:p.name, lat:p.lat, lng:p.lng, pid:p.pid, address:p.address, placeIdx:idx});
   if(activeIdx===idx) openDetail(idx);
 }
 function clearTempOrigin(){ saveTempOrigin(null); if(activeIdx>=0) openDetail(activeIdx); }
