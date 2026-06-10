@@ -120,8 +120,12 @@
   .btn-round:hover{background:var(--soft);}
   .btn-round svg{width:20px;height:20px;}
   .notes{margin:20px 0 0;background:var(--soft);border-radius:16px;padding:18px 20px;}
-  .notes .label{font-size:15px;color:#9ca3af;margin:0 0 7px;}
   .notes p{margin:0;font-size:17px;line-height:1.5;color:#1f2937;}
+  .detail-extra{margin:16px 0 0;display:flex;flex-direction:column;gap:12px;}
+  .detail-address{font-size:16px;color:#4b5563;line-height:1.45;}
+  .detail-wa{display:inline-flex;align-items:center;gap:10px;font-size:16px;color:#128C7E;text-decoration:none;font-weight:500;}
+  .detail-wa:hover{text-decoration:underline;}
+  .detail-wa svg{flex:0 0 20px;width:20px;height:20px;}
   .contact{margin:18px 0 0;display:flex;flex-direction:column;gap:12px;}
   .contact a{display:flex;align-items:center;gap:12px;font-size:16px;color:#374151;text-decoration:none;word-break:break-all;}
   .contact svg{width:18px;height:18px;flex:0 0 18px;color:#6b7280;}
@@ -242,9 +246,9 @@
     <div class="detail-sub" id="dSub"></div>
     <div class="actions" id="dActions"></div>
     <div class="notes" id="dNotes" style="display:none;">
-      <p class="label">Notes from NYT</p>
       <p id="dNotesText"></p>
     </div>
+    <div class="detail-extra" id="dExtra" style="display:none;"></div>
     <div class="contact" id="dContact"></div>
   </div>
   <div class="detail-nav">
@@ -263,26 +267,26 @@ const HOME_KEY = "rome_home_base_v3";
 const TEMP_ORIGIN_KEY = "rome_temp_origin";
 
 const PLACES = [
-  {name:"Elizabeth Unique Hotel", pid:"ChIJaW8J1dJgLxMRhO9Xo9F7kH0", lat:41.9070, lng:12.4773, type:"Hotel", home:true, phone:"+39 06 3223633", website:"https://www.elizabethgroup.it/en/elizabeth-unique-rome/", notes:"Home base. Boutique Design Hotel on Via delle Colonnette 35 — a quiet corner of the Tridente, steps from Piazza del Popolo. Perfect starting point for exploring Rome."},
-  {name:"Museo della Forma Urbis", pid:"ChIJZ7c578lhLxMR3G-oln-WuLM", lat:41.8872, lng:12.4923, type:"Museum", category:"Destination", notes:"New museum mixing archaeology and cartography. Floor embossed with an 18th-century map + 3rd-century stone slabs. Free archaeological park outside. €11 admission. Last entry 6:15 PM."},
-  {name:"Domus Tiberiana (Palatine Hill)", pid:"ChIJA1aK_LRhLxMRJ6Hw0arUiyI", lat:41.8896, lng:12.4875, type:"Ruin", category:"Destination", notes:"Reopened in 2023 after decades of closure. Multimedia exhibitions in a 1st-century palace. Prime sunset views of the Forum and Colosseum. Combined ticket with Forum + Colosseum €18, valid 24 hrs."},
-  {name:"Uma Roma", pid:"ChIJV59_iGxhLxMRN9TZz9JP0rY", lat:41.8606, lng:12.4720, type:"Restaurant", category:"Food", notes:"Scandinavian-minimalist trattoria in Garbatella. Fermentation-focused tasting menu by two Italian chefs (one formerly at Noma). 4 courses + 4 snacks €50. Book well ahead — very popular."},
-  {name:"Nite Kong (Drink Kong)", pid:"ChIJf3VE-7xhLxMRnMf_uACwlXc", lat:41.8966, lng:12.4986, type:"Bar", category:"Fun", notes:"Backroom reservation-only lounge in Monti. Sultry vibe, live music. Try the Nite Negroni — redistilled to crystal clarity in their lab. €18. Reservation required."},
-  {name:"Jerry Thomas Bar Room", pid:"ChIJtVi6jkRgLxMR187T1pZelGw", lat:41.8895, lng:12.4691, type:"Bar", category:"Fun", notes:"Second outpost of the legendary Jerry Thomas Speakeasy, in Trastevere. 6 intimate tables. Prohibition-era design. The Consulate (rum, vermouth, sherry, apricot bitters) is €15."},
-  {name:"Villa Torlonia", pid:"ChIJdd6JQHJhLxMRG9JQQ8hqbL8", lat:41.9166, lng:12.5108, type:"Park & Museum", category:"Destination", notes:"Rolling, grassy cultural complex with 19th-century buildings. Casino Nobile has frescoed ceilings and marble floors. Serra Moresca greenhouse has kaleidoscopic Moorish glass. Mussolini's WWII air-raid bunker opened to the public last year. All-access €17."},
-  {name:"La Limonaia (Villa Torlonia café)", pid:"ChIJ4SP3QXJhLxMR75HSqjU60JA", lat:41.9168, lng:12.5106, type:"Café", category:"Food", notes:"Quick Roman-style fuel-up inside Villa Torlonia. Cappuccino €1.50, croissant €1.20. Perfect before exploring the grounds."},
-  {name:"Piatto Romano", pid:"ChIJhXXscCVgLxMRa2Bc06UkXPI", lat:41.8796, lng:12.4778, type:"Restaurant", category:"Food", notes:"Traditional trattoria near Testaccio market. Roman classics: carbonara, amatriciana, deep-fried artichoke, rigatoni with calf intestines, coda alla vaccinara. ~€40 for 3 courses. Book ahead."},
-  {name:"Via di Monserrato (Shopping)", pid:"ChIJh1LyS0RgLxMRis6Arx2IXCI", lat:41.8958, lng:12.4655, type:"Shopping", category:"Fun", notes:"Cobbled street lined with stone palazzos in western Centro Storico. Find: Illuminami (Gothic/Victorian wallpapers), Spazio Giallo (Italian ceramics), Le Tre Sarte (theatrical fashion). Great for an afternoon browse."},
-  {name:"Santa Maria del Popolo", pid:"ChIJn8_twvhgLxMRrSlE7RYxCbg", lat:41.9107, lng:12.4763, type:"Church", category:"Destination", notes:"Medieval and Renaissance basilica. Home to two Caravaggio masterpieces in their original setting: Crucifixion of St. Peter and Conversion of St. Paul. Also: Raphael statue of Elijah, two Bernini statues. Free admission."},
-  {name:"Marita (Pizzeria)", pid:"ChIJy9xETGRhLxMRYvPykOzMT34", lat:41.9070, lng:12.4657, type:"Restaurant", category:"Food", notes:"Pizza by Roberta Esposito — Italy's Top Emerging Pizzamaker 2018, Pizza of the Year 2022. Try the Summer Light (€20) or the Amarita: mozzarella, semi-burnt guanciale + copper pot of amatriciana (€15)."},
-  {name:"Vino e Vinili", pid:"ChIJe3sJQNthLxMRvy3EF26-RGQ", lat:41.8999, lng:12.4760, type:"Wine Bar", category:"Fun", notes:"Neon-lit nook in Centro Storico. Rock 'n' roll books, vinyl albums, natural wines. Nebbiolo by Poderi Cellario €8/glass. Tiny and cozy — perfect late-night stop."},
-  {name:"33 Giri", pid:"ChIJQygRTABhLxMRRDxP83e4yZY", lat:41.9025, lng:12.4570, type:"Wine Bar", category:"Fun", notes:"Near the Vatican. Gallery-like design: white walls, candles, flamboyant flowers. DJs spin soul and funk. Sangiovese-Trebbiano blend by Senza Rete €10/glass."},
-  {name:"Piazza della Rotonda (Pantheon)", pid:"ChIJqUCGZ09gLxMRLM42IPpl0co", lat:41.8986, lng:12.4769, type:"Landmark", category:"Destination", notes:"Marvel at the marble fountain's carved serpents, sea creatures and grotesque faces — directly across from the Pantheon, which Stendhal called 'the most beautiful remains from ancient Rome.' Newly scrubbed clean for the Jubilee."},
-  {name:"Fontana dei Quattro Fiumi (Piazza Navona)", pid:"ChIJG6cU-09gLxMR8hkxk2gJcFI", lat:41.8991, lng:12.4730, type:"Landmark", category:"Destination", notes:"Bernini's 17th-century masterpiece: four figures representing the Nile, Danube, Ganges, and Rio de la Plata. One of Rome's most dramatic piazzas. Newly refurbished."},
-  {name:"Piazza Farnese", pid:"ChIJfyVJ5kVgLxMR0GCfU6CY8cM", lat:41.8961, lng:12.4664, type:"Landmark", category:"Destination", notes:"Two elegant fountains using 3rd-century granite basins from the Baths of Caracalla. Palazzo Farnese's Renaissance façade partly designed by Michelangelo."},
-  {name:"Otaleg! Gelato (Trastevere)", pid:"ChIJ9Y5rI7KKJRMRs5I2u26nGM8", lat:41.8892, lng:12.4697, type:"Gelato", category:"Food", notes:"Famous for lush pistachio (nuts from Turkey and Iran). Also creative flavors like mascarpone with crab or creamy avocado with lime. Two flavors €3. No seats — stroll Trastevere's cobbled passageways."},
-  {name:"Fatamorgana Gelato (Trastevere)", pid:"ChIJkVbVdTlgLxMRL_AfGNHHWhk", lat:41.8890, lng:12.4695, type:"Gelato", category:"Food", notes:"Internationally inspired flavors: Mexican Chamoy (tamarind, pepperoncino, Maldon salt) and Pierogi Ruskie (potato, ricotta, red onion, red wine, butter). Two flavors €3."},
-  {name:"Ivo a Trastevere", pid:"ChIJLwrxODhgLxMRQEdqiR-QOyk", lat:41.8887, lng:12.4692, type:"Restaurant", category:"Food", notes:"No-nonsense purveyor of classic Roman thin-crust pizzas since the 1960s. Simple, crowded, and beloved. A local institution for Sunday lunch."}
+  {name:"Elizabeth Unique Hotel", pid:"ChIJaW8J1dJgLxMRhO9Xo9F7kH0", lat:41.9070, lng:12.4773, type:"Hotel", home:true, address:"Via delle Colonnette 35, 00186 Roma", phone:"+39 06 3223633", website:"https://www.elizabethgroup.it/en/elizabeth-unique-rome/", notes:"Home base. Boutique Design Hotel on Via delle Colonnette 35 — a quiet corner of the Tridente, steps from Piazza del Popolo. Perfect starting point for exploring Rome."},
+  {name:"Museo della Forma Urbis", pid:"ChIJZ7c578lhLxMR3G-oln-WuLM", lat:41.8872, lng:12.4923, type:"Museum", category:"Destination", address:"Via di San Gregorio, 30, 00184 Roma", notes:"New museum mixing archaeology and cartography. Floor embossed with an 18th-century map + 3rd-century stone slabs. Free archaeological park outside. €11 admission. Last entry 6:15 PM."},
+  {name:"Domus Tiberiana (Palatine Hill)", pid:"ChIJA1aK_LRhLxMRJ6Hw0arUiyI", lat:41.8896, lng:12.4875, type:"Ruin", category:"Destination", address:"Palatine Hill, Via di San Gregorio, 00184 Roma", notes:"Reopened in 2023 after decades of closure. Multimedia exhibitions in a 1st-century palace. Prime sunset views of the Forum and Colosseum. Combined ticket with Forum + Colosseum €18, valid 24 hrs."},
+  {name:"Uma Roma", pid:"ChIJV59_iGxhLxMRN9TZz9JP0rY", lat:41.8606, lng:12.4720, type:"Restaurant", category:"Food", address:"Via Girolamo Benzoni, 34, 00154 Roma", phone:"+39 334 385 5945", whatsapp:"+39 334 385 5945", notes:"Scandinavian-minimalist trattoria in Garbatella. Fermentation-focused tasting menu by two Italian chefs (one formerly at Noma). 4 courses + 4 snacks €50. Book well ahead — very popular."},
+  {name:"Nite Kong (Drink Kong)", pid:"ChIJf3VE-7xhLxMRnMf_uACwlXc", lat:41.8966, lng:12.4986, type:"Bar", category:"Fun", address:"Piazza di San Martino ai Monti, 8, 00184 Roma", phone:"+39 06 2348 8666", notes:"Backroom reservation-only lounge in Monti. Sultry vibe, live music. Try the Nite Negroni — redistilled to crystal clarity in their lab. €18. Reservation required."},
+  {name:"Jerry Thomas Bar Room", pid:"ChIJtVi6jkRgLxMR187T1pZelGw", lat:41.8895, lng:12.4691, type:"Bar", category:"Fun", address:"Via del Moro, 10, 00153 Roma", whatsapp:"+39 340 733 2980", notes:"Second outpost of the legendary Jerry Thomas Speakeasy, in Trastevere. 6 intimate tables. Prohibition-era design. The Consulate (rum, vermouth, sherry, apricot bitters) is €15."},
+  {name:"Villa Torlonia", pid:"ChIJdd6JQHJhLxMRG9JQQ8hqbL8", lat:41.9166, lng:12.5108, type:"Park & Museum", category:"Destination", address:"Via Nomentana, 70, 00161 Roma", phone:"+39 06 4426 2855", notes:"Rolling, grassy cultural complex with 19th-century buildings. Casino Nobile has frescoed ceilings and marble floors. Serra Moresca greenhouse has kaleidoscopic Moorish glass. Mussolini's WWII air-raid bunker opened to the public last year. All-access €17."},
+  {name:"La Limonaia (Villa Torlonia café)", pid:"ChIJ4SP3QXJhLxMR75HSqjU60JA", lat:41.9168, lng:12.5106, type:"Café", category:"Food", address:"Villa Torlonia, Via Nomentana, 70, 00161 Roma", notes:"Quick Roman-style fuel-up inside Villa Torlonia. Cappuccino €1.50, croissant €1.20. Perfect before exploring the grounds."},
+  {name:"Piatto Romano", pid:"ChIJhXXscCVgLxMRa2Bc06UkXPI", lat:41.8796, lng:12.4778, type:"Restaurant", category:"Food", address:"Via Giovanni Battista Bodoni, 62, 00153 Roma", phone:"+39 06 6401 4447", whatsapp:"+39 06 6401 4447", notes:"Traditional trattoria near Testaccio market. Roman classics: carbonara, amatriciana, deep-fried artichoke, rigatoni with calf intestines, coda alla vaccinara. ~€40 for 3 courses. Book ahead."},
+  {name:"Via di Monserrato (Shopping)", pid:"ChIJh1LyS0RgLxMRis6Arx2IXCI", lat:41.8958, lng:12.4655, type:"Shopping", category:"Fun", address:"Via di Monserrato, 00186 Roma", notes:"Cobbled street lined with stone palazzos in western Centro Storico. Find: Illuminami (Gothic/Victorian wallpapers), Spazio Giallo (Italian ceramics), Le Tre Sarte (theatrical fashion). Great for an afternoon browse."},
+  {name:"Santa Maria del Popolo", pid:"ChIJn8_twvhgLxMRrSlE7RYxCbg", lat:41.9107, lng:12.4763, type:"Church", category:"Destination", address:"Piazza del Popolo, 12, 00187 Roma", notes:"Medieval and Renaissance basilica. Home to two Caravaggio masterpieces in their original setting: Crucifixion of St. Peter and Conversion of St. Paul. Also: Raphael statue of Elijah, two Bernini statues. Free admission."},
+  {name:"Marita (Pizzeria)", pid:"ChIJy9xETGRhLxMRYvPykOzMT34", lat:41.9070, lng:12.4657, type:"Restaurant", category:"Food", address:"Via Flaminia, 515, 00191 Roma", phone:"+39 376 270 3526", whatsapp:"+39 376 270 3526", notes:"Pizza by Roberta Esposito — Italy's Top Emerging Pizzamaker 2018, Pizza of the Year 2022. Try the Summer Light (€20) or the Amarita: mozzarella, semi-burnt guanciale + copper pot of amatriciana (€15)."},
+  {name:"Vino e Vinili", pid:"ChIJe3sJQNthLxMRvy3EF26-RGQ", lat:41.8999, lng:12.4760, type:"Wine Bar", category:"Fun", address:"Via dei Banchi Vecchi, 41, 00186 Roma", phone:"+39 06 6880 7448", notes:"Neon-lit nook in Centro Storico. Rock 'n' roll books, vinyl albums, natural wines. Nebbiolo by Poderi Cellario €8/glass. Tiny and cozy — perfect late-night stop."},
+  {name:"33 Giri", pid:"ChIJQygRTABhLxMRRDxP83e4yZY", lat:41.9025, lng:12.4570, type:"Wine Bar", category:"Fun", address:"Via di Santa Maria dell'Anima, 41, 00186 Roma", phone:"+39 06 4542 8763", notes:"Near the Vatican. Gallery-like design: white walls, candles, flamboyant flowers. DJs spin soul and funk. Sangiovese-Trebbiano blend by Senza Rete €10/glass."},
+  {name:"Piazza della Rotonda (Pantheon)", pid:"ChIJqUCGZ09gLxMRLM42IPpl0co", lat:41.8986, lng:12.4769, type:"Landmark", category:"Destination", address:"Piazza della Rotonda, 00186 Roma", notes:"Marvel at the marble fountain's carved serpents, sea creatures and grotesque faces — directly across from the Pantheon, which Stendhal called 'the most beautiful remains from ancient Rome.' Newly scrubbed clean for the Jubilee."},
+  {name:"Fontana dei Quattro Fiumi (Piazza Navona)", pid:"ChIJG6cU-09gLxMR8hkxk2gJcFI", lat:41.8991, lng:12.4730, type:"Landmark", category:"Destination", address:"Piazza Navona, 00186 Roma", notes:"Bernini's 17th-century masterpiece: four figures representing the Nile, Danube, Ganges, and Rio de la Plata. One of Rome's most dramatic piazzas. Newly refurbished."},
+  {name:"Piazza Farnese", pid:"ChIJfyVJ5kVgLxMR0GCfU6CY8cM", lat:41.8961, lng:12.4664, type:"Landmark", category:"Destination", address:"Piazza Farnese, 00186 Roma", notes:"Two elegant fountains using 3rd-century granite basins from the Baths of Caracalla. Palazzo Farnese's Renaissance façade partly designed by Michelangelo."},
+  {name:"Otaleg! Gelato (Trastevere)", pid:"ChIJ9Y5rI7KKJRMRs5I2u26nGM8", lat:41.8892, lng:12.4697, type:"Gelato", category:"Food", address:"Via di San Cosimato, 14a, 00153 Roma", phone:"+39 338 651 5450", whatsapp:"+39 338 651 5450", notes:"Famous for lush pistachio (nuts from Turkey and Iran). Also creative flavors like mascarpone with crab or creamy avocado with lime. Two flavors €3. No seats — stroll Trastevere's cobbled passageways."},
+  {name:"Fatamorgana Gelato (Trastevere)", pid:"ChIJkVbVdTlgLxMRL_AfGNHHWhk", lat:41.8890, lng:12.4695, type:"Gelato", category:"Food", address:"Via Roma Libera, 11, 00153 Roma", phone:"+39 06 5833 4204", notes:"Internationally inspired flavors: Mexican Chamoy (tamarind, pepperoncino, Maldon salt) and Pierogi Ruskie (potato, ricotta, red onion, red wine, butter). Two flavors €3."},
+  {name:"Ivo a Trastevere", pid:"ChIJLwrxODhgLxMRQEdqiR-QOyk", lat:41.8887, lng:12.4692, type:"Restaurant", category:"Food", address:"Via di San Francesco a Ripa, 158, 00153 Roma", phone:"+39 06 581 7082", notes:"No-nonsense purveyor of classic Roman thin-crust pizzas since the 1960s. Simple, crowded, and beloved. A local institution for Sunday lunch."}
 ];
 const DEFAULT_HOME = { name:PLACES[0].name, lat:PLACES[0].lat, lng:PLACES[0].lng, pid:PLACES[0].pid, placeIdx:0, custom:false };
 const TYPE_GRADIENT = {
@@ -379,10 +383,7 @@ window.setHomeFromPlace = setHomeFromPlace;
 window.setTempFromPlace = setTempFromPlace;
 window.clearTempOrigin = clearTempOrigin;
 
-function catClass(c){ return c ? c.toLowerCase() : ""; }
-function catTagHtml(p){
-  return p.category ? ` · <span class="cat-tag ${catClass(p.category)}">${p.category}</span>` : '';
-}
+function waUrl(num){ return `https://wa.me/${num.replace(/\D/g,'')}`; }
 function isDefaultHome(){
   return !homeBase.custom && homeBase.placeIdx === DEFAULT_HOME.placeIdx;
 }
@@ -484,8 +485,8 @@ function buildList(){
     div.className = 'list-item' + (isHomePlace(idx) ? ' home' : '');
     div.dataset.idx = idx;
     const meta = (p.rating != null)
-      ? `<span><b>${p.rating.toFixed(1)}</b> <span class="star">★</span> (${p.count.toLocaleString()})</span> · <span>${p.type}</span>${catTagHtml(p)}`
-      : `<span>${p.type}</span>${catTagHtml(p)}`;
+      ? `<span><b>${p.rating.toFixed(1)}</b> <span class="star">★</span> (${p.count.toLocaleString()})</span>`
+      : '';
     const thumbInner = (p.photos && p.photos.length)
       ? `<img src="${p.photos[0]}" alt="" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;">`
       : photoIcon;
@@ -494,7 +495,7 @@ function buildList(){
       <div class="thumb" style="background:${gradFor(p)}">${thumbInner}</div>
       <div class="li-body">
         <h3>${p.name}</h3>
-        <div class="li-meta">${meta}</div>
+        ${meta ? `<div class="li-meta">${meta}</div>` : ''}
         <div class="li-desc">${p.notes||''}</div>
       </div>`;
     div.addEventListener('click', ()=> openDetail(idx));
@@ -512,23 +513,40 @@ function setThumb(idx){
   }
 }
 
-async function fetchPhotos(p){
-  if(!p.pid) return null;
+async function fetchPlaceDetails(p){
+  if(!p.pid) return;
   try{
-    const r = await fetch(`https://places.googleapis.com/v1/places/${p.pid}?fields=photos&key=${GOOGLE_MAPS_API_KEY}`);
-    if(!r.ok) return null;
+    const r = await fetch(`https://places.googleapis.com/v1/places/${p.pid}?fields=photos,formattedAddress,internationalPhoneNumber&key=${GOOGLE_MAPS_API_KEY}`);
+    if(!r.ok) return;
     const data = await r.json();
-    if(!data.photos || !data.photos.length) return null;
-    return data.photos.slice(0,3).map(ph =>
-      `https://places.googleapis.com/v1/${ph.name}/media?maxWidthPx=900&key=${GOOGLE_MAPS_API_KEY}`);
-  }catch(e){ return null; }
+    if(data.formattedAddress) p.address = data.formattedAddress;
+    if(data.internationalPhoneNumber && !p.phone) p.phone = data.internationalPhoneNumber;
+    if(data.photos && data.photos.length){
+      p.photos = data.photos.slice(0,3).map(ph =>
+        `https://places.googleapis.com/v1/${ph.name}/media?maxWidthPx=900&key=${GOOGLE_MAPS_API_KEY}`);
+    }
+  }catch(e){}
 }
 
 async function loadAllPhotos(){
   for(const [idx,p] of PLACES.entries()){
-    const urls = await fetchPhotos(p);
-    if(urls){ p.photos = urls; setThumb(idx); if(idx===activeIdx) openDetail(idx); }
+    await fetchPlaceDetails(p);
+    if(p.photos) setThumb(idx);
+    if(idx===activeIdx) openDetail(idx);
   }
+}
+
+function renderDetailExtra(p){
+  const el = document.getElementById('dExtra');
+  let html = '';
+  if(p.address) html += `<div class="detail-address">${p.address}</div>`;
+  if(p.whatsapp){
+    html += `<a class="detail-wa" href="${waUrl(p.whatsapp)}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 0 0 .614.614l4.458-1.495A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.006-1.37l-.36-.214-2.647.887.887-2.647-.234-.371A9.818 9.818 0 1 1 12 21.818z"/></svg>
+      ${p.whatsapp}</a>`;
+  }
+  el.innerHTML = html;
+  el.style.display = html ? 'flex' : 'none';
 }
 
 const detail = document.getElementById('detail');
@@ -579,14 +597,18 @@ function openDetail(idx){
   numEl.textContent = idx+1;
   numEl.style.background = isHomePlace(idx) ? '#f5a623' : '';
   document.getElementById('dName').textContent = p.name;
-  document.getElementById('dSub').innerHTML = (p.rating != null)
-    ? `<b>${p.rating.toFixed(1)}</b> <span class="star">★</span> <span>(${p.count.toLocaleString()})</span> · <span>${p.type}</span>${catTagHtml(p)}`
-    : `<span>${p.type}</span>${catTagHtml(p)}`;
+  const subEl = document.getElementById('dSub');
+  if(p.rating != null){
+    subEl.innerHTML = `<b>${p.rating.toFixed(1)}</b> <span class="star">★</span> <span>(${p.count.toLocaleString()})</span>`;
+    subEl.style.display = 'flex';
+  } else {
+    subEl.innerHTML = '';
+    subEl.style.display = 'none';
+  }
 
-  const fromLabel = tempOrigin ? tempOrigin.name : homeBase.name;
   let html = `<a class="btn-primary" href="${directionsUrl(p)}" target="_blank" rel="noopener">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-      Directions from ${fromLabel.split('(')[0].trim()}</a>`;
+      Directions</a>`;
   if(!isHomePlace(idx)){
     html += `<button type="button" class="btn-round" onclick="setHomeFromPlace(${idx})" aria-label="Set as home base" title="Set as home base"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg></button>`;
   }
@@ -604,8 +626,11 @@ function openDetail(idx){
   if(p.notes){ notes.style.display='block'; document.getElementById('dNotesText').textContent = p.notes; }
   else notes.style.display='none';
 
+  renderDetailExtra(p);
+  if(!p.address && p.pid) fetchPlaceDetails(p).then(()=>{ if(activeIdx===idx) renderDetailExtra(p); });
+
   let c='';
-  if(p.phone) c += `<a href="tel:${p.phone.replace(/\s/g,'')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${p.phone}</a>`;
+  if(p.phone && !p.whatsapp) c += `<a href="tel:${p.phone.replace(/\s/g,'')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${p.phone}</a>`;
   if(p.website){ const d=p.website.replace(/^https?:\/\//,'').replace(/\/$/,''); c += `<a href="${p.website}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>${d}</a>`; }
   document.getElementById('dContact').innerHTML = c;
 
