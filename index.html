@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Corsica: Casa Sopra Trip (Sept 2026)</title>
+<title>Corsica</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@400;500&display=swap" rel="stylesheet">
@@ -25,7 +25,6 @@
   body{font-family:var(--font);color:var(--ink);background:#e4eef3;overflow:hidden;}
   #map{position:absolute;inset:0;z-index:1;background:#e4eef3;}
 
-  /* numbered chips as advanced markers */
   .num-chip{
     background:var(--accent);border-radius:50%;
     box-shadow:0 2px 8px rgba(0,0,0,.3);
@@ -40,14 +39,19 @@
   .num-chip.home{background:#f5a623;border-color:#fff;}
   .num-chip.home.active{background:#fff;color:#f5a623;}
 
-  /* panel */
   .panel{position:absolute;top:22px;right:22px;bottom:22px;width:430px;
     background:var(--panel-bg);border-radius:var(--radius);box-shadow:var(--shadow);
     z-index:1000;display:flex;flex-direction:column;overflow:hidden;}
   .panel-head{padding:28px 30px 18px;flex:0 0 auto;}
-  .panel-head h1{margin:0;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-.4px;}
+  .panel-head h1{margin:0;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-.4px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:12px;}
   .panel-head h1 span{font-weight:normal;}
-  .panel-head p{margin:16px 0 0;color:#4b5563;font-size:16px;line-height:1.45;}
+  .filters{display:flex;gap:8px;margin:14px 0 0;flex-wrap:wrap;}
+  .filter-chip{border:1.5px solid #e2e2e2;background:#fff;border-radius:20px;
+    padding:7px 14px;font-size:13.5px;font-weight:500;cursor:pointer;color:#4b5563;
+    transition:background .14s,border-color .14s,color .14s;}
+  .filter-chip:hover{background:var(--soft);}
+  .filter-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
   .list{flex:1 1 auto;overflow-y:auto;padding:6px 18px 18px;-webkit-overflow-scrolling:touch;}
   .list-item{display:flex;gap:14px;align-items:center;padding:16px;border-radius:18px;
     cursor:pointer;transition:background .14s ease;margin-bottom:6px;}
@@ -58,14 +62,14 @@
   .thumb{width:80px;height:80px;flex:0 0 80px;border-radius:14px;background:#ededed;
     display:flex;align-items:center;justify-content:center;overflow:hidden;}
   .thumb svg{width:30px;height:30px;opacity:.4;color:#fff;}
-  .li-body{min-width:0;}
-  .li-body h3{margin:0;font-size:20px;font-weight:700;letter-spacing:-.2px;}
+  .li-body{min-width:0;flex:1;}
+  .li-title{display:flex;align-items:center;gap:10px;min-width:0;}
+  .li-title h3{margin:0;font-size:18px;font-weight:700;letter-spacing:-.2px;min-width:0;}
   .li-meta{margin:5px 0 0;font-size:15px;color:#4b5563;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
   .li-meta .star{color:var(--star);}
   .li-desc{margin:6px 0 0;font-size:14.5px;color:#6b7280;line-height:1.35;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 
-  /* detail card */
   .detail{position:absolute;top:22px;right:22px;width:540px;max-width:calc(100vw - 44px);
     background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);z-index:1200;
     overflow:hidden;display:none;flex-direction:column;}
@@ -92,7 +96,8 @@
   .detail-body h2{margin:0;font-size:27px;font-weight:800;letter-spacing:-.3px;}
   .detail-sub{margin:10px 0 0;font-size:16px;color:#4b5563;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
   .detail-sub .star{color:var(--star);}
-  .actions{display:flex;align-items:center;gap:12px;margin:20px 0 0;}
+  .actions{display:flex;align-items:center;gap:12px;margin:20px 0 0;flex-wrap:wrap;}
+  .actions .btn-primary{flex:1 1 auto;min-width:0;}
   .btn-primary{background:var(--accent);color:#fff;border:none;padding:13px 26px;border-radius:30px;
     font-size:16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
     text-decoration:none;transition:opacity .14s ease;}
@@ -103,8 +108,12 @@
   .btn-round:hover{background:var(--soft);}
   .btn-round svg{width:20px;height:20px;}
   .notes{margin:20px 0 0;background:var(--soft);border-radius:16px;padding:18px 20px;}
-  .notes .label{font-size:15px;color:#9ca3af;margin:0 0 7px;}
   .notes p{margin:0;font-size:17px;line-height:1.5;color:#1f2937;}
+  .detail-extra{margin:16px 0 0;display:flex;flex-direction:column;gap:12px;}
+  .detail-address{font-size:16px;color:#4b5563;line-height:1.45;}
+  .detail-wa{display:inline-flex;align-items:center;gap:10px;font-size:16px;color:#128C7E;text-decoration:none;font-weight:500;}
+  .detail-wa:hover{text-decoration:underline;}
+  .detail-wa svg{flex:0 0 20px;width:20px;height:20px;}
   .contact{margin:18px 0 0;display:flex;flex-direction:column;gap:12px;}
   .contact a{display:flex;align-items:center;gap:12px;font-size:16px;color:#374151;text-decoration:none;word-break:break-all;}
   .contact svg{width:18px;height:18px;flex:0 0 18px;color:#6b7280;}
@@ -115,13 +124,6 @@
   .nav-arrow:hover{background:var(--soft);}
   .nav-arrow:disabled{opacity:.35;cursor:default;}
   .nav-count{font-size:17px;color:#4b5563;font-weight:500;}
-
-  .share-fab{position:absolute;top:22px;left:22px;z-index:1000;background:#fff;border:none;
-    border-radius:30px;padding:11px 18px;font-size:15px;font-weight:600;cursor:pointer;
-    box-shadow:0 4px 16px rgba(0,0,0,.16);display:flex;align-items:center;gap:8px;color:var(--ink);
-    transition:background .14s ease;}
-  .share-fab:hover{background:var(--soft);}
-  .share-fab svg{width:17px;height:17px;}
 
   .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);
     background:#111;color:#fff;padding:12px 22px;border-radius:30px;font-size:15px;z-index:3000;
@@ -136,21 +138,31 @@
   .keywarn code{background:rgba(0,0,0,.06);padding:1px 6px;border-radius:5px;font-size:13px;}
 
   .sheet-handle{display:none;}
+  .sheet-title-main,.sheet-title-sub,.sheet-grabber{display:none;}
 
   @media (max-width:760px){
-    .share-fab{top:14px;left:14px;padding:9px 15px;font-size:14px;}
-    .panel{top:auto;left:0;right:0;bottom:0;width:100%;height:52vh;border-radius:22px 22px 0 0;
-      box-shadow:0 -8px 30px rgba(0,0,0,.18);transition:height .25s ease;}
-    .panel.collapsed{height:128px;}
-    .sheet-handle{display:block;width:42px;height:5px;border-radius:3px;background:#d4d4d8;
-      margin:10px auto 2px;flex:0 0 auto;cursor:grab;}
-    .panel-head{padding:6px 22px 12px;}
-    .panel-head h1{font-size:23px;}
-    .panel-head p{font-size:14px;margin-top:10px;}
-    .panel.collapsed .panel-head p{display:none;}
+    :root{--sheet-h:72vh;--sheet-handle-h:64px;}
+    .panel{top:auto;left:0;right:0;bottom:0;width:100%;height:var(--sheet-h);border-radius:22px 22px 0 0;
+      box-shadow:0 -8px 30px rgba(0,0,0,.18);transition:height .28s ease;}
+    .panel.collapsed{height:var(--sheet-handle-h);min-height:var(--sheet-handle-h);}
+    .sheet-handle{display:flex;align-items:center;justify-content:space-between;gap:14px;
+      width:100%;min-height:var(--sheet-handle-h);flex:0 0 var(--sheet-handle-h);
+      padding:16px 24px 10px;cursor:grab;touch-action:none;
+      -webkit-user-select:none;user-select:none;}
+    .sheet-title-main,.sheet-title-sub,.sheet-grabber{display:block;}
+    .sheet-title-main{font-size:23px;font-weight:800;letter-spacing:-.4px;line-height:1.15;flex:1 1 0;min-width:0;}
+    .sheet-title-sub{font-size:23px;font-weight:400;letter-spacing:-.4px;line-height:1.15;flex:1 1 0;min-width:0;text-align:right;}
+    .sheet-grabber{width:42px;height:5px;border-radius:3px;background:#a1a1aa;flex:0 0 42px;}
+    .panel.collapsed .panel-head,
+    .panel.collapsed .list{display:none;}
+    .panel-head{padding:2px 24px 10px;}
+    .panel-head h1{display:none;}
+    .panel-head .filters{margin-top:6px;}
     .list{padding:4px 12px 24px;}
-    .li-body h3{font-size:18px;}
-    .detail{top:auto;left:0;right:0;bottom:0;width:100%;max-width:100%;max-height:88vh;border-radius:22px 22px 0 0;}
+    .li-title h3{font-size:17px;}
+    .detail{top:auto;left:0;right:0;bottom:0;width:100%;max-width:100%;height:var(--sheet-h);border-radius:22px 22px 0 0;
+      box-shadow:0 -8px 30px rgba(0,0,0,.18);}
+    .detail-body{flex:1 1 auto;min-height:0;}
     .detail-photo{height:230px;}
     .detail-body{padding:20px 20px 22px;}
     .detail-body h2{font-size:23px;}
@@ -158,7 +170,6 @@
     .actions{gap:10px;}
   }
 
-  /* ===== Landing / enter screen ===== */
   #gate{
     position:fixed;inset:0;z-index:5000;
     background:
@@ -207,7 +218,7 @@
       <span class="l2">is Hilarious!</span>
     </h1>
     <div class="gate-form">
-      <button type="button" onclick="unlock(true)">Enter</button>
+      <button type="button" onclick="unlock()">Enter</button>
     </div>
   </div>
 </div>
@@ -219,10 +230,19 @@
 </div>
 
 <div class="panel" id="panel">
-  <div class="sheet-handle" id="handle"></div>
+  <div class="sheet-handle" id="handle">
+    <span class="sheet-title-main">Corsica</span>
+    <span class="sheet-grabber" aria-hidden="true"></span>
+    <span class="sheet-title-sub">Fall 2026</span>
+  </div>
   <div class="panel-head">
-    <h1><span style="font-weight:normal">Hilary and Paco turned 60</span> Let's party!</h1>
-    <p>Everything from your itinerary, pinned and routed from Casa Sopra. Beaches, hikes, boat departure points, dining, the vineyard, market, and Figari airport.</p>
+    <h1>Corsica<span>Fall 2026</span></h1>
+    <div class="filters" id="filters">
+      <button class="filter-chip on" data-cat="all">All</button>
+      <button class="filter-chip" data-cat="Food">Food</button>
+      <button class="filter-chip" data-cat="Fun">Fun</button>
+      <button class="filter-chip" data-cat="Destination">Destination</button>
+    </div>
   </div>
   <div class="list" id="list"></div>
 </div>
@@ -244,9 +264,9 @@
     <div class="detail-sub" id="dSub"></div>
     <div class="actions" id="dActions"></div>
     <div class="notes" id="dNotes" style="display:none;">
-      <p class="label">Notes from Claude</p>
       <p id="dNotesText"></p>
     </div>
+    <div class="detail-extra" id="dExtra" style="display:none;"></div>
     <div class="contact" id="dContact"></div>
   </div>
   <div class="detail-nav">
@@ -263,36 +283,37 @@
 <div class="toast" id="toast">Link copied to clipboard</div>
 
 <script>
-const VILLA = { name:"Casa Sopra (Villa)", lat:41.654087, lng:9.345066 };
+const HOME_KEY = "corsica_home_base_v1";
+const TEMP_ORIGIN_KEY = "corsica_temp_origin";
 
 const PLACES = [
-  {name:"Casa Sopra (Villa)", lat:41.654087, lng:9.345066, type:"Villa", home:true, photos:["https://cdn.lecollectionist.com/__lecollectionist__/production/houses/8800/photos/HCVN9cXkSWu39JkanCYN_52e69cb2-e805-402e-995d-49c9abc92ba9.jpg?width=1872&force_format=webp&q=50"], notes:"Home base. Strapazzola, Sainte Lucie de Porto Vecchio. ~35 min from Figari airport."},
-  {name:"Figari Airport (FSC)", pid:"ChIJl9pJtYvT2xIRNkKtc-fcylA", lat:41.4986918, lng:9.0982729, rating:3.3, count:1518, type:"Airport", phone:"+33 4 95 71 10 10", website:"https://figari-aeroport.cci.corsica/", notes:"Closest airport, ~35 min. Small and chaotic in season; build in buffer time."},
-  {name:"Rondinara Bay", pid:"ChIJMb_oO6Z-2RIRQyhduRLd_CM", lat:41.4679718, lng:9.2668734, rating:4.4, count:6199, type:"Beach", phone:"+33 4 95 73 11 88", website:"http://www.bonifacio.fr/", notes:"Shell-shaped lagoon. Go before 10 AM to park. Parking ~6 euro/day. Chez Ange on the sand."},
-  {name:"Santa Giulia Beach", pid:"ChIJ7ZE1wQB_2RIRmdsTMdyTqf4", lat:41.5311579, lng:9.2737819, rating:4.3, count:10421, type:"Beach", notes:"Resort-chic, shallow water, gets crowded. Beach-club loungers. Late Sept = paradise."},
-  {name:"Palombaggia", pid:"ChIJ0w9YUIqC2RIRL7bpRUsVYG4", lat:41.5579257, lng:9.3253045, rating:4.6, count:3826, type:"Beach", notes:"The postcard beach. Red rocks + pines. Morning swim ~9 AM before crowds. Pricey parking."},
-  {name:"Roccapina Beach", pid:"ChIJt78GCgPM2xIRJfvMoJYP9jw", lat:41.4964134, lng:8.9328304, rating:4.6, count:2063, type:"Beach", phone:"+33 6 89 43 22 58", website:"https://www.cf-corse.fr/plage-corse/roccapina/", notes:"Wild cove under Lion Rock. ~1 hr. Rough dirt track in (SUV strongly advised). Bring food/water."},
-  {name:"Piscines Naturelles de Cavu", pid:"ChIJ5SI73CSP2RIR1SCBZpCw5vo", lat:41.732496, lng:9.293011, rating:4.6, count:5195, type:"Natural pools", phone:"+33 4 95 21 78 04", website:"http://www.atyroliana.com/", notes:"Warm river pools, smooth boulder sunbeds. 10-15 min flat walk. Les 3 Piscines at trailhead. Great recovery day."},
-  {name:"Trou de la Bombe (Bavella)", pid:"ChIJ3y8NhHiJ2RIRg5SeD0ylqiE", lat:41.778626, lng:9.234601, rating:4.7, count:419, type:"Hike", notes:"~3 hr round trip from Col de Bavella. Rocky scramble at the end. Crowded in Sept. Auberge du Col de Bavella at trailhead."},
-  {name:"Piscia di Gallu Waterfall", pid:"ChIJCxmSoI2H2RIRnp-2QYZ7hKI", lat:41.6806159, lng:9.2155734, rating:4.6, count:2454, type:"Hike", notes:"60m waterfall, ~2 hr round trip. Steep, slippery final descent; good shoes. Park at Ospedale dam. ~5 euro parking."},
-  {name:"Sentier des Bruzzi (Chevanu)", pid:"ChIJNxXbFOzR2xIRcq3iHbFF2HY", lat:41.47146, lng:9.0307932, rating:4.7, count:414, type:"Hike", website:"https://tinyurl.com/bdh7zd69", notes:"Easy ~1.5 hr coastal loop, red rocks + coves. Little shade, bring water. Golden-hour walk. Pairs with Clos Canarelli."},
-  {name:"Tour de Fautea (Genoese Tower)", pid:"ChIJEWkR5l2Q2RIRbEr8sAU4KaA", lat:41.7134611, lng:9.4055344, rating:4.6, count:299, type:"Landmark", notes:"Easy 20-min climb, two bays in one view. Best at sunset. ~15 min north."},
-  {name:"Canyon du Pulischellu", pid:"ChIJ97Kb_J6L2RIRQp-Y7iNhEPA", lat:41.8231776, lng:9.2642134, rating:4.5, count:198, type:"Canyoning", phone:"+33 6 12 39 54 75", website:"http://canyoningcorse.fr/", notes:"Canyoning: rock slides into pools. Book a morning slot, wetsuits provided. ~1 hr 15 (Bavella)."},
-  {name:"Porto-Vecchio Marina", pid:"ChIJPwTGrtaD2RIRzlsAVMPpuBQ", lat:41.5901321, lng:9.2831827, rating:4.3, count:3314, type:"Marina", phone:"+33 4 95 70 17 93", website:"https://marina.portivechju.corsica/", notes:"Main marina for Lavezzi + Cavallo catamaran charters. Book 6-8 weeks ahead. ~20 min. Note: marina undergoing works."},
-  {name:"Marina di Fiori (St-Cyprien port)", pid:"ChIJg8uoJiOD2RIR5jWW-tOqRV8", lat:41.6100973, lng:9.2934187, rating:4.6, count:15, type:"Marina", phone:"+33 6 46 61 93 22", website:"https://www.portmarinadifiori.com/", notes:"Nearest port to villa for small motorboats (Pinarello + Fautea, no skipper). Very close."},
-  {name:"Embarcadere des Iles Lavezzi", pid:"ChIJcY1Ylbtj2RIRv6imolQZq68", lat:41.3400982, lng:9.2585882, rating:4.7, count:119, type:"Boat departure", notes:"Lavezzi marine reserve: clearest water in the Med. Full-day catamaran. Last boat back ~4:30 PM."},
-  {name:"La Ferme de Cavallo", pid:"ChIJlR1Rm2dj2RIRhi-hJUipcCU", lat:41.3701285, lng:9.259752, rating:3.9, count:100, type:"Restaurant", phone:"+33 6 37 10 46 89", website:"https://instagram.com/lafermecavallo", notes:"Exclusive lunch on private Cavallo island, arrive by boat. Stunning views but very pricey and they upsell hard."},
-  {name:"Pinarello Beach", pid:"ChIJLXT7kLGa2RIRSCd76YDt5s4", lat:41.6842791, lng:9.3736823, rating:4.7, count:43, type:"Beach", notes:"Pine forest runs to the sand = rare natural shade in Sept. Picnic-day beach. ~15 min."},
-  {name:"Bonifacio Port", pid:"ChIJJ5pmgSXY2xIRZl-hyM6L-zs", lat:41.3885543, lng:9.1567937, rating:4.6, count:135, type:"Boat departure", notes:"Medieval citadel + cliffs. ~40 min. Lobster pasta at Le Voilier. Boat charters depart here too."},
-  {name:"Le Voilier (Bonifacio)", pid:"ChIJgfxZgCPY2xIRFzBfEqskNpo", lat:41.3880713, lng:9.162365, rating:4.3, count:562, type:"Restaurant", phone:"+33 6 24 79 75 65", website:"http://www.levoilier-bonifacio.com/", notes:"Spiny lobster / fresh fish at the port. Pre-book for your Bonifacio day. Closed Tuesdays."},
-  {name:"Tamaricciu (Palombaggia)", pid:"ChIJE8u5DGOC2RIRbTQKodYrtZo", lat:41.5534473, lng:9.3181647, rating:4.3, count:886, type:"Restaurant", phone:"+33 4 95 70 49 89", website:"https://www.tamaricciu.com/", notes:"High-end lunch under the pines on the postcard beach. Book ~1:30 PM. Reserve ahead, gets crowded."},
-  {name:"Le Dune (Palombaggia)", pid:"ChIJw9uEzSCD2RIRzVB2A-xvWbw", lat:41.5459488, lng:9.3036828, rating:4.6, count:334, type:"Restaurant", phone:"+33 6 58 14 09 92", website:"https://www.instagram.com/ledune.portovecchio/", notes:"Sunset BBQ on quiet Asciaghju beach. Grilled lobster + prime rib. Reserve for Sept 10-20."},
-  {name:"Le Rouf (Pinarello)", pid:"ChIJP3tsYuua2RIRtw0DCyvf4FY", lat:41.6824908, lng:9.3755804, rating:4.3, count:632, type:"Restaurant", phone:"+33 4 95 71 50 48", website:"https://www.lepinarello.com/le-rouf", notes:"Sea-view fine dining after boating. Reserve 2-3 dinners. Closed Mondays; book the terrace specifically."},
-  {name:"Ferme-Auberge A Pinzutella", pid:"ChIJxRl16THt2RIRjaqvXrjEDAk", lat:41.8528913, lng:9.354957, rating:4.3, count:136, type:"Restaurant", phone:"+33 4 95 57 41 18", website:"https://aubergeapinzutella.wixsite.com/website", notes:"Rustic farm-to-table: wild boar, veal, chestnut polenta. Stone farmhouse with Bavella views. Long slow lunch. ~50 min."},
-  {name:"Clos Canarelli (Vineyard)", pid:"ChIJ9xW1RDvU2xIRUfDjylJcTHs", lat:41.5263776, lng:9.146174, rating:4.1, count:55, type:"Vineyard", phone:"+33 4 95 71 07 55", website:"http://www.closcanarelli.com/", notes:"Prestigious organic/biodynamic vineyard near Figari. Book afternoon tasting. Closed Sat/Sun. Pairs with Bruzzi hike."},
-  {name:"Porto-Vecchio Market", pid:"ChIJSVQywAmD2RIRXnkw2LTsN5Q", lat:41.5911261, lng:9.2786827, rating:4.4, count:16, type:"Market", notes:"Sunday market: charcuterie, cheese, honey, produce. Head to the far end for the best Corsican charcuterie producer."}
+  {name:"Casa Sopra (Villa)", lat:41.654087, lng:9.345066, type:"Villa", home:true, address:"Strapazzola, 20144 Sainte-Lucie-de-Porto-Vecchio, France", photos:["https://cdn.lecollectionist.com/__lecollectionist__/production/houses/8800/photos/HCVN9cXkSWu39JkanCYN_52e69cb2-e805-402e-995d-49c9abc92ba9.jpg?width=1872&force_format=webp&q=50"], notes:"Home base. Strapazzola, Sainte Lucie de Porto Vecchio. ~35 min from Figari airport."},
+  {name:"Figari Airport (FSC)", pid:"ChIJl9pJtYvT2xIRNkKtc-fcylA", lat:41.4986918, lng:9.0982729, rating:3.3, count:1518, type:"Airport", category:"Destination", phone:"+33 4 95 71 10 10", website:"https://figari-aeroport.cci.corsica/", notes:"Closest airport, ~35 min. Small and chaotic in season; build in buffer time."},
+  {name:"Rondinara Bay", pid:"ChIJMb_oO6Z-2RIRQyhduRLd_CM", lat:41.4679718, lng:9.2668734, rating:4.4, count:6199, type:"Beach", category:"Fun", phone:"+33 4 95 73 11 88", website:"http://www.bonifacio.fr/", notes:"Shell-shaped lagoon. Go before 10 AM to park. Parking ~6 euro/day. Chez Ange on the sand."},
+  {name:"Santa Giulia Beach", pid:"ChIJ7ZE1wQB_2RIRmdsTMdyTqf4", lat:41.5311579, lng:9.2737819, rating:4.3, count:10421, type:"Beach", category:"Fun", notes:"Resort-chic, shallow water, gets crowded. Beach-club loungers. Late Sept = paradise."},
+  {name:"Palombaggia", pid:"ChIJ0w9YUIqC2RIRL7bpRUsVYG4", lat:41.5579257, lng:9.3253045, rating:4.6, count:3826, type:"Beach", category:"Fun", notes:"The postcard beach. Red rocks + pines. Morning swim ~9 AM before crowds. Pricey parking."},
+  {name:"Roccapina Beach", pid:"ChIJt78GCgPM2xIRJfvMoJYP9jw", lat:41.4964134, lng:8.9328304, rating:4.6, count:2063, type:"Beach", category:"Fun", phone:"+33 6 89 43 22 58", website:"https://www.cf-corse.fr/plage-corse/roccapina/", notes:"Wild cove under Lion Rock. ~1 hr. Rough dirt track in (SUV strongly advised). Bring food/water."},
+  {name:"Piscines Naturelles de Cavu", pid:"ChIJ5SI73CSP2RIR1SCBZpCw5vo", lat:41.732496, lng:9.293011, rating:4.6, count:5195, type:"Natural pools", category:"Fun", phone:"+33 4 95 21 78 04", website:"http://www.atyroliana.com/", notes:"Warm river pools, smooth boulder sunbeds. 10-15 min flat walk. Les 3 Piscines at trailhead. Great recovery day."},
+  {name:"Trou de la Bombe (Bavella)", pid:"ChIJ3y8NhHiJ2RIRg5SeD0ylqiE", lat:41.778626, lng:9.234601, rating:4.7, count:419, type:"Hike", category:"Fun", notes:"~3 hr round trip from Col de Bavella. Rocky scramble at the end. Crowded in Sept. Auberge du Col de Bavella at trailhead."},
+  {name:"Piscia di Gallu Waterfall", pid:"ChIJCxmSoI2H2RIRnp-2QYZ7hKI", lat:41.6806159, lng:9.2155734, rating:4.6, count:2454, type:"Hike", category:"Fun", notes:"60m waterfall, ~2 hr round trip. Steep, slippery final descent; good shoes. Park at Ospedale dam. ~5 euro parking."},
+  {name:"Sentier des Bruzzi (Chevanu)", pid:"ChIJNxXbFOzR2xIRcq3iHbFF2HY", lat:41.47146, lng:9.0307932, rating:4.7, count:414, type:"Hike", category:"Fun", website:"https://tinyurl.com/bdh7zd69", notes:"Easy ~1.5 hr coastal loop, red rocks + coves. Little shade, bring water. Golden-hour walk. Pairs with Clos Canarelli."},
+  {name:"Tour de Fautea (Genoese Tower)", pid:"ChIJEWkR5l2Q2RIRbEr8sAU4KaA", lat:41.7134611, lng:9.4055344, rating:4.6, count:299, type:"Landmark", category:"Destination", notes:"Easy 20-min climb, two bays in one view. Best at sunset. ~15 min north."},
+  {name:"Canyon du Pulischellu", pid:"ChIJ97Kb_J6L2RIRQp-Y7iNhEPA", lat:41.8231776, lng:9.2642134, rating:4.5, count:198, type:"Canyoning", category:"Fun", phone:"+33 6 12 39 54 75", website:"http://canyoningcorse.fr/", notes:"Canyoning: rock slides into pools. Book a morning slot, wetsuits provided. ~1 hr 15 (Bavella)."},
+  {name:"Porto-Vecchio Marina", pid:"ChIJPwTGrtaD2RIRzlsAVMPpuBQ", lat:41.5901321, lng:9.2831827, rating:4.3, count:3314, type:"Marina", category:"Fun", phone:"+33 4 95 70 17 93", website:"https://marina.portivechju.corsica/", notes:"Main marina for Lavezzi + Cavallo catamaran charters. Book 6-8 weeks ahead. ~20 min. Note: marina undergoing works."},
+  {name:"Marina di Fiori (St-Cyprien port)", pid:"ChIJg8uoJiOD2RIR5jWW-tOqRV8", lat:41.6100973, lng:9.2934187, rating:4.6, count:15, type:"Marina", category:"Fun", phone:"+33 6 46 61 93 22", website:"https://www.portmarinadifiori.com/", notes:"Nearest port to villa for small motorboats (Pinarello + Fautea, no skipper). Very close."},
+  {name:"Embarcadere des Iles Lavezzi", pid:"ChIJcY1Ylbtj2RIRv6imolQZq68", lat:41.3400982, lng:9.2585882, rating:4.7, count:119, type:"Boat departure", category:"Fun", notes:"Lavezzi marine reserve: clearest water in the Med. Full-day catamaran. Last boat back ~4:30 PM."},
+  {name:"La Ferme de Cavallo", pid:"ChIJlR1Rm2dj2RIRhi-hJUipcCU", lat:41.3701285, lng:9.259752, rating:3.9, count:100, type:"Restaurant", category:"Food", phone:"+33 6 37 10 46 89", website:"https://instagram.com/lafermecavallo", notes:"Exclusive lunch on private Cavallo island, arrive by boat. Stunning views but very pricey and they upsell hard."},
+  {name:"Pinarello Beach", pid:"ChIJLXT7kLGa2RIRSCd76YDt5s4", lat:41.6842791, lng:9.3736823, rating:4.7, count:43, type:"Beach", category:"Fun", notes:"Pine forest runs to the sand = rare natural shade in Sept. Picnic-day beach. ~15 min."},
+  {name:"Bonifacio Port", pid:"ChIJJ5pmgSXY2xIRZl-hyM6L-zs", lat:41.3885543, lng:9.1567937, rating:4.6, count:135, type:"Boat departure", category:"Fun", notes:"Medieval citadel + cliffs. ~40 min. Lobster pasta at Le Voilier. Boat charters depart here too."},
+  {name:"Le Voilier (Bonifacio)", pid:"ChIJgfxZgCPY2xIRFzBfEqskNpo", lat:41.3880713, lng:9.162365, rating:4.3, count:562, type:"Restaurant", category:"Food", phone:"+33 6 24 79 75 65", website:"http://www.levoilier-bonifacio.com/", notes:"Spiny lobster / fresh fish at the port. Pre-book for your Bonifacio day. Closed Tuesdays."},
+  {name:"Tamaricciu (Palombaggia)", pid:"ChIJE8u5DGOC2RIRbTQKodYrtZo", lat:41.5534473, lng:9.3181647, rating:4.3, count:886, type:"Restaurant", category:"Food", phone:"+33 4 95 70 49 89", website:"https://www.tamaricciu.com/", notes:"High-end lunch under the pines on the postcard beach. Book ~1:30 PM. Reserve ahead, gets crowded."},
+  {name:"Le Dune (Palombaggia)", pid:"ChIJw9uEzSCD2RIRzVB2A-xvWbw", lat:41.5459488, lng:9.3036828, rating:4.6, count:334, type:"Restaurant", category:"Food", phone:"+33 6 58 14 09 92", website:"https://www.instagram.com/ledune.portovecchio/", notes:"Sunset BBQ on quiet Asciaghju beach. Grilled lobster + prime rib. Reserve for Sept 10-20."},
+  {name:"Le Rouf (Pinarello)", pid:"ChIJP3tsYuua2RIRtw0DCyvf4FY", lat:41.6824908, lng:9.3755804, rating:4.3, count:632, type:"Restaurant", category:"Food", phone:"+33 4 95 71 50 48", website:"https://www.lepinarello.com/le-rouf", notes:"Sea-view fine dining after boating. Reserve 2-3 dinners. Closed Mondays; book the terrace specifically."},
+  {name:"Ferme-Auberge A Pinzutella", pid:"ChIJxRl16THt2RIRjaqvXrjEDAk", lat:41.8528913, lng:9.354957, rating:4.3, count:136, type:"Restaurant", category:"Food", phone:"+33 4 95 57 41 18", website:"https://aubergeapinzutella.wixsite.com/website", notes:"Rustic farm-to-table: wild boar, veal, chestnut polenta. Stone farmhouse with Bavella views. Long slow lunch. ~50 min."},
+  {name:"Clos Canarelli (Vineyard)", pid:"ChIJ9xW1RDvU2xIRUfDjylJcTHs", lat:41.5263776, lng:9.146174, rating:4.1, count:55, type:"Vineyard", category:"Food", phone:"+33 4 95 71 07 55", website:"http://www.closcanarelli.com/", notes:"Prestigious organic/biodynamic vineyard near Figari. Book afternoon tasting. Closed Sat/Sun. Pairs with Bruzzi hike."},
+  {name:"Porto-Vecchio Market", pid:"ChIJSVQywAmD2RIRXnkw2LTsN5Q", lat:41.5911261, lng:9.2786827, rating:4.4, count:16, type:"Market", category:"Food", notes:"Sunday market: charcuterie, cheese, honey, produce. Head to the far end for the best Corsican charcuterie producer."}
 ];
-
+const DEFAULT_HOME = { name:PLACES[0].name, lat:PLACES[0].lat, lng:PLACES[0].lng, address:PLACES[0].address, placeIdx:0, custom:false };
 const TYPE_GRADIENT = {
   "Villa":"linear-gradient(135deg,#3b6978,#204051)","Airport":"linear-gradient(135deg,#6b7280,#374151)",
   "Beach":"linear-gradient(135deg,#5ec4d6,#2a8ba3)","Natural pools":"linear-gradient(135deg,#4fb6a3,#1f7a6b)",
@@ -302,12 +323,100 @@ const TYPE_GRADIENT = {
   "Vineyard":"linear-gradient(135deg,#9a6fb0,#5e3a73)","Market":"linear-gradient(135deg,#d4a23c,#9a7320)"
 };
 function gradFor(p){ return TYPE_GRADIENT[p.type] || "linear-gradient(135deg,#9ca3af,#4b5563)"; }
+function placeMetaHtml(p){
+  if(p.rating != null){
+    return `<span><b>${p.rating.toFixed(1)}</b> <span class="star">★</span> (${(p.count||0).toLocaleString()})</span> · <span>${p.type}</span>`;
+  }
+  return p.type ? `<span>${p.type}</span>` : '';
+}
 const photoIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`;
 
-let map, activeIdx = -1, markers = [];
+let map, activeIdx = -1, markers = [], homeMarker = null, activeFilter = "all";
+let homeBase = loadHomeBase();
+let tempOrigin = loadTempOrigin();
 
+function loadHomeBase(){
+  try{
+    const s = localStorage.getItem(HOME_KEY);
+    if(s){
+      const h = JSON.parse(s);
+      if(h && typeof h.lat === "number" && typeof h.lng === "number" && h.name){
+        if(h.placeIdx === 0) return {...DEFAULT_HOME, ...h, name:DEFAULT_HOME.name, lat:DEFAULT_HOME.lat, lng:DEFAULT_HOME.lng, address:DEFAULT_HOME.address};
+        return h;
+      }
+    }
+  }catch(e){}
+  const home = {...DEFAULT_HOME};
+  localStorage.setItem(HOME_KEY, JSON.stringify(home));
+  return home;
+}
+function saveHomeBase(h){ homeBase = h; localStorage.setItem(HOME_KEY, JSON.stringify(h)); refreshHomeMarker(); }
+function loadTempOrigin(){
+  try{
+    const s = sessionStorage.getItem(TEMP_ORIGIN_KEY);
+    if(s) return JSON.parse(s);
+  }catch(e){}
+  return null;
+}
+function saveTempOrigin(o){
+  tempOrigin = o;
+  if(o) sessionStorage.setItem(TEMP_ORIGIN_KEY, JSON.stringify(o));
+  else sessionStorage.removeItem(TEMP_ORIGIN_KEY);
+}
+function getDirectionsOrigin(){ return tempOrigin || homeBase; }
+function placeFor(loc){
+  if(loc.placeIdx != null && PLACES[loc.placeIdx]) return PLACES[loc.placeIdx];
+  return loc;
+}
+function resolvePid(loc){
+  const place = placeFor(loc);
+  return place.pid || null;
+}
+function endpointLabel(loc){
+  const place = placeFor(loc);
+  const name = place.name;
+  const address = place.address;
+  const lat = place.lat;
+  const lng = place.lng;
+  if(name && address) return `${name}, ${address}`;
+  if(address) return address;
+  if(name) return `${name}, Corsica, France`;
+  if(lat != null && lng != null) return `${lat},${lng}`;
+  return "";
+}
+function setDirectionsEndpoint(params, role, loc){
+  const label = endpointLabel(loc);
+  if(!label) return;
+  params.set(role, label);
+  const pid = resolvePid(loc);
+  if(pid) params.set(`${role}_place_id`, pid);
+}
 function directionsUrl(p){
-  return `https://www.google.com/maps/dir/?api=1&origin=${VILLA.lat},${VILLA.lng}&destination=${p.lat},${p.lng}&travelmode=driving`;
+  const origin = getDirectionsOrigin();
+  const params = new URLSearchParams({ api:"1", travelmode:"driving" });
+  setDirectionsEndpoint(params, "destination", p);
+  if(origin) setDirectionsEndpoint(params, "origin", origin);
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+function setTempFromPlace(idx){
+  const p = PLACES[idx];
+  saveTempOrigin({name:p.name, lat:p.lat, lng:p.lng, pid:p.pid, address:p.address, placeIdx:idx});
+  if(activeIdx===idx) openDetail(idx);
+}
+function clearTempOrigin(){ saveTempOrigin(null); if(activeIdx>=0) openDetail(activeIdx); }
+window.setTempFromPlace = setTempFromPlace;
+window.clearTempOrigin = clearTempOrigin;
+
+function waUrl(num){ return `https://wa.me/${num.replace(/\D/g,'')}`; }
+function refreshHomeMarker(){
+  markers.forEach((m, i)=> m.el.classList.toggle('home', isHomePlace(i)));
+  if(!homeMarker) return;
+  if(!homeBase.custom && homeBase.placeIdx != null){
+    homeMarker.map = null;
+    return;
+  }
+  homeMarker.map = map;
+  homeMarker.position = {lat:homeBase.lat, lng:homeBase.lng};
 }
 
 function loadGoogleMaps(){
@@ -336,7 +445,7 @@ async function initMap(){
 
   PLACES.forEach((p, idx)=>{
     const el = document.createElement('div');
-    el.className = 'num-chip' + (p.home ? ' home' : '');
+    el.className = 'num-chip' + (isHomePlace(idx) ? ' home' : '');
     el.textContent = (idx+1);
     const marker = new AdvancedMarkerElement({ map, position:{lat:p.lat, lng:p.lng}, content:el });
     marker.addListener('gmp-click', ()=> openDetail(idx));
@@ -344,37 +453,63 @@ async function initMap(){
     markers.push({marker, el});
   });
 
+  const homeEl = document.createElement('div');
+  homeEl.className = 'num-chip home';
+  homeEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>`;
+  homeMarker = new AdvancedMarkerElement({ map, position:{lat:homeBase.lat, lng:homeBase.lng}, content:homeEl, zIndex:500 });
+  refreshHomeMarker();
+
   buildList();
   loadAllPhotos();
+  syncMapView();
 }
 window.initMap = initMap;
 
 function refreshChips(){
   markers.forEach((m,i)=> m.el.classList.toggle('active', i===activeIdx));
 }
+function isHomePlace(idx){
+  return !homeBase.custom && homeBase.placeIdx === idx;
+}
+function placeMatchesFilter(p){
+  return activeFilter === "all" || p.category === activeFilter;
+}
+function filteredIndices(){
+  return PLACES.map((_, i)=>i).filter(i=>placeMatchesFilter(PLACES[i]));
+}
+function updateMarkerVisibility(){
+  markers.forEach((m, i)=>{
+    const show = placeMatchesFilter(PLACES[i]);
+    m.marker.map = show ? map : null;
+  });
+}
 
 function buildList(){
   const listEl = document.getElementById('list');
   listEl.innerHTML = '';
   PLACES.forEach((p, idx)=>{
+    if(!placeMatchesFilter(p)) return;
     const div = document.createElement('div');
-    div.className = 'list-item' + (p.home ? ' home' : ''); div.dataset.idx = idx;
-    const meta = (p.rating != null)
-      ? `<span><b>${p.rating.toFixed(1)}</b> <span class="star">★</span> (${p.count.toLocaleString()})</span> · <span>${p.type}</span>`
-      : `<span>${p.type}</span>`;
+    div.className = 'list-item' + (isHomePlace(idx) ? ' home' : '');
+    div.dataset.idx = idx;
+    const meta = placeMetaHtml(p);
     const thumbInner = (p.photos && p.photos.length)
       ? `<img src="${p.photos[0]}" alt="" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;">`
       : photoIcon;
     div.innerHTML = `
       <div class="thumb" style="background:${gradFor(p)}">${thumbInner}</div>
       <div class="li-body">
-        <h3>${idx+1}. ${p.name}</h3>
-        <div class="li-meta">${meta}</div>
+        <div class="li-title">
+          <span class="li-num">${idx+1}</span>
+          <h3>${p.name}</h3>
+        </div>
+        ${meta ? `<div class="li-meta">${meta}</div>` : ''}
         <div class="li-desc">${p.notes||''}</div>
       </div>`;
     div.addEventListener('click', ()=> openDetail(idx));
     listEl.appendChild(div);
   });
+  updateMarkerVisibility();
 }
 
 function setThumb(idx){
@@ -385,24 +520,54 @@ function setThumb(idx){
     el.innerHTML = `<img src="${p.photos[0]}" alt="" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;">`;
   }
 }
+function refreshListMeta(idx){
+  const p = PLACES[idx];
+  const el = document.querySelector(`.list-item[data-idx="${idx}"] .li-meta`);
+  if(!el) return;
+  const meta = placeMetaHtml(p);
+  if(meta){
+    el.innerHTML = meta;
+    el.style.display = '';
+  }
+}
 
-async function fetchPhotos(p){
-  if(!p.pid) return null;
+async function fetchPlaceDetails(p){
+  if(!p.pid) return;
   try{
-    const r = await fetch(`https://places.googleapis.com/v1/places/${p.pid}?fields=photos&key=${GOOGLE_MAPS_API_KEY}`);
-    if(!r.ok) return null;
+    const r = await fetch(`https://places.googleapis.com/v1/places/${p.pid}?fields=photos,formattedAddress,internationalPhoneNumber,rating,userRatingCount&key=${GOOGLE_MAPS_API_KEY}`);
+    if(!r.ok) return;
     const data = await r.json();
-    if(!data.photos || !data.photos.length) return null;
-    return data.photos.slice(0,3).map(ph =>
-      `https://places.googleapis.com/v1/${ph.name}/media?maxWidthPx=900&key=${GOOGLE_MAPS_API_KEY}`);
-  }catch(e){ return null; }
+    if(data.formattedAddress) p.address = data.formattedAddress;
+    if(data.internationalPhoneNumber && !p.phone) p.phone = data.internationalPhoneNumber;
+    if(data.rating != null) p.rating = data.rating;
+    if(data.userRatingCount != null) p.count = data.userRatingCount;
+    if(data.photos && data.photos.length && !p.photos){
+      p.photos = data.photos.slice(0,3).map(ph =>
+        `https://places.googleapis.com/v1/${ph.name}/media?maxWidthPx=900&key=${GOOGLE_MAPS_API_KEY}`);
+    }
+  }catch(e){}
 }
 
 async function loadAllPhotos(){
   for(const [idx,p] of PLACES.entries()){
-    const urls = await fetchPhotos(p);
-    if(urls){ p.photos = urls; setThumb(idx); if(idx===activeIdx) openDetail(idx); }
+    await fetchPlaceDetails(p);
+    if(p.photos) setThumb(idx);
+    refreshListMeta(idx);
+    if(idx===activeIdx) openDetail(idx);
   }
+}
+
+function renderDetailExtra(p){
+  const el = document.getElementById('dExtra');
+  let html = '';
+  if(p.address) html += `<div class="detail-address">${p.address}</div>`;
+  if(p.whatsapp){
+    html += `<a class="detail-wa" href="${waUrl(p.whatsapp)}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 0 0 .614.614l4.458-1.495A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.006-1.37l-.36-.214-2.647.887.887-2.647-.234-.371A9.818 9.818 0 1 1 12 21.818z"/></svg>
+      ${p.whatsapp}</a>`;
+  }
+  el.innerHTML = html;
+  el.style.display = html ? 'flex' : 'none';
 }
 
 const detail = document.getElementById('detail');
@@ -451,15 +616,27 @@ function openDetail(idx){
 
   const numEl = document.getElementById('dNum');
   numEl.textContent = idx+1;
-  numEl.style.background = p.home ? '#f5a623' : '';
+  numEl.style.background = isHomePlace(idx) ? '#f5a623' : '';
   document.getElementById('dName').textContent = p.name;
-  document.getElementById('dSub').innerHTML = (p.rating != null)
-    ? `<b>${p.rating.toFixed(1)}</b> <span class="star">★</span> <span>(${p.count.toLocaleString()})</span> · <span>${p.type}</span>`
-    : `<span>${p.type}</span>`;
+  const subEl = document.getElementById('dSub');
+  const subMeta = placeMetaHtml(p);
+  if(subMeta){
+    subEl.innerHTML = subMeta;
+    subEl.style.display = 'flex';
+  } else {
+    subEl.innerHTML = '';
+    subEl.style.display = 'none';
+  }
 
   let html = `<a class="btn-primary" href="${directionsUrl(p)}" target="_blank" rel="noopener">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
       Directions</a>`;
+  const isTempHere = tempOrigin && tempOrigin.placeIdx === idx;
+  if(!isTempHere){
+    html += `<button type="button" class="btn-round" onclick="setTempFromPlace(${idx})" aria-label="Start next directions from here" title="Start next directions from here"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg></button>`;
+  } else {
+    html += `<button type="button" class="btn-round" onclick="clearTempOrigin()" aria-label="Clear temporary starting point" title="Clear temporary starting point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  }
   if(p.phone) html += `<a class="btn-round" href="tel:${p.phone.replace(/\s/g,'')}" aria-label="Call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>`;
   if(p.website) html += `<a class="btn-round" href="${p.website}" target="_blank" rel="noopener" aria-label="Website"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></a>`;
   document.getElementById('dActions').innerHTML = html;
@@ -468,51 +645,166 @@ function openDetail(idx){
   if(p.notes){ notes.style.display='block'; document.getElementById('dNotesText').textContent = p.notes; }
   else notes.style.display='none';
 
+  renderDetailExtra(p);
+  if(p.pid) fetchPlaceDetails(p).then(()=>{
+    if(activeIdx!==idx) return;
+    refreshListMeta(idx);
+    const sub = placeMetaHtml(p);
+    if(sub){
+      document.getElementById('dSub').innerHTML = sub;
+      document.getElementById('dSub').style.display = 'flex';
+    }
+    renderDetailExtra(p);
+  });
+
   let c='';
-  if(p.phone) c += `<a href="tel:${p.phone.replace(/\s/g,'')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${p.phone}</a>`;
+  if(p.phone && !p.whatsapp) c += `<a href="tel:${p.phone.replace(/\s/g,'')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${p.phone}</a>`;
   if(p.website){ const d=p.website.replace(/^https?:\/\//,'').replace(/\/$/,''); c += `<a href="${p.website}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>${d}</a>`; }
   document.getElementById('dContact').innerHTML = c;
 
-  document.getElementById('navCount').textContent = `${idx+1} of ${PLACES.length}`;
-  document.getElementById('navPrev').disabled = idx===0;
-  document.getElementById('navNext').disabled = idx===PLACES.length-1;
+  const filtered = filteredIndices();
+  const pos = filtered.indexOf(idx);
+  document.getElementById('navCount').textContent = `${pos+1} of ${filtered.length}`;
+  document.getElementById('navPrev').disabled = pos <= 0;
+  document.getElementById('navNext').disabled = pos >= filtered.length - 1;
 
   detail.classList.add('show');
-  if(map) map.panTo({lat:p.lat, lng:p.lng});
+  scheduleMapViewSync();
 }
 function closeDetail(){
   detail.classList.remove('show'); activeIdx=-1; refreshChips();
   document.querySelectorAll('.list-item').forEach(el=>el.classList.remove('active'));
+  scheduleMapViewSync();
 }
 function nav(dir){
-  let n = activeIdx + dir;
-  if(n<0) n=0; if(n>PLACES.length-1) n=PLACES.length-1;
-  openDetail(n);
+  const filtered = filteredIndices();
+  const pos = filtered.indexOf(activeIdx);
+  if(pos < 0) return;
+  const nextPos = pos + dir;
+  if(nextPos < 0 || nextPos >= filtered.length) return;
+  openDetail(filtered[nextPos]);
 }
 
-function sharePrototype(){
-  const url = window.location.href;
-  if(navigator.share){ navigator.share({title:"Corsica: Casa Sopra Trip (Sept 2026)", url}).catch(()=>{}); }
-  else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(showToast).catch(showToast); }
-  else showToast();
-}
-function showToast(){ const t=document.getElementById('toast'); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+document.getElementById('filters').addEventListener('click', e=>{
+  const chip = e.target.closest('.filter-chip');
+  if(!chip) return;
+  activeFilter = chip.dataset.cat;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.toggle('on', c===chip));
+  buildList();
+  if(activeIdx>=0 && !placeMatchesFilter(PLACES[activeIdx])) closeDetail();
+});
 
 const panel = document.getElementById('panel');
 const handle = document.getElementById('handle');
-let startY=null;
+let dragStartY = null, dragMoved = false;
 function isMobile(){ return window.matchMedia('(max-width:760px)').matches; }
-handle.addEventListener('click', ()=>{ if(isMobile()) panel.classList.toggle('collapsed'); });
-['touchstart','mousedown'].forEach(ev=>handle.addEventListener(ev, e=>{ startY=(e.touches?e.touches[0].clientY:e.clientY); }));
-['touchend','mouseup'].forEach(ev=>document.addEventListener(ev, e=>{
-  if(startY===null) return;
-  const endY=(e.changedTouches?e.changedTouches[0].clientY:e.clientY);
-  if(endY-startY>40) panel.classList.add('collapsed');
-  else if(startY-endY>40) panel.classList.remove('collapsed');
-  startY=null;
-}));
 
-// gallery: swipe + keyboard
+function sheetBottomPx(){
+  if(!isMobile()) return 0;
+  if(detail.classList.contains('show')) return detail.offsetHeight || 0;
+  return panel.offsetHeight || 0;
+}
+let mapSyncOverlay = null;
+function getMapSyncOverlay(){
+  if(!mapSyncOverlay){
+    mapSyncOverlay = new google.maps.OverlayView();
+    mapSyncOverlay.onAdd = function(){};
+    mapSyncOverlay.draw = function(){};
+  }
+  return mapSyncOverlay;
+}
+function recenterActivePlace(){
+  if(!map || activeIdx < 0) return;
+  const p = PLACES[activeIdx];
+  if(!p) return;
+  const latLng = { lat: p.lat, lng: p.lng };
+  map.panTo(latLng);
+  if(!isMobile() || sheetBottomPx() <= 0) return;
+  const bottom = sheetBottomPx();
+  const ov = getMapSyncOverlay();
+  ov.setMap(map);
+  google.maps.event.addListenerOnce(map, 'idle', ()=>{
+    const proj = ov.getProjection();
+    if(!proj) return;
+    const pt = proj.fromLatLngToContainerPixel(latLng);
+    if(!pt) return;
+    const div = map.getDiv();
+    const dx = Math.round(pt.x - div.clientWidth / 2);
+    const dy = Math.round(pt.y - (div.clientHeight - bottom) / 2);
+    if(dx || dy) map.panBy(dx, dy);
+  });
+}
+function focusMapOnActivePlace(){
+  if(!map || activeIdx < 0) return;
+  recenterActivePlace();
+  google.maps.event.addListenerOnce(map, 'idle', recenterActivePlace);
+}
+function syncMapView(){
+  if(!map) return;
+  map.setPadding({ top:0, right:0, bottom:sheetBottomPx(), left:0 });
+  google.maps.event.trigger(map, 'resize');
+}
+function scheduleMapViewSync(){
+  syncMapView();
+  focusMapOnActivePlace();
+  requestAnimationFrame(()=>{
+    syncMapView();
+    focusMapOnActivePlace();
+  });
+}
+
+function setPanelCollapsed(collapsed){
+  if(!isMobile()) return;
+  panel.classList.toggle('collapsed', collapsed);
+  scheduleMapViewSync();
+}
+
+handle.addEventListener('touchstart', e=>{
+  if(!isMobile()) return;
+  dragStartY = e.touches[0].clientY;
+  dragMoved = false;
+}, {passive:true});
+
+handle.addEventListener('touchmove', e=>{
+  if(dragStartY===null || !isMobile()) return;
+  const dy = e.touches[0].clientY - dragStartY;
+  if(Math.abs(dy) > 8) dragMoved = true;
+  if(dy > 50) setPanelCollapsed(true);
+  else if(dy < -50) setPanelCollapsed(false);
+}, {passive:true});
+
+handle.addEventListener('touchend', ()=>{
+  if(dragStartY===null || !isMobile()) return;
+  if(!dragMoved) setPanelCollapsed(panel.classList.contains('collapsed') ? false : true);
+  dragStartY = null;
+});
+
+handle.addEventListener('mousedown', e=>{
+  if(!isMobile()) return;
+  dragStartY = e.clientY;
+  dragMoved = false;
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e=>{
+  if(dragStartY===null || !isMobile()) return;
+  const dy = e.clientY - dragStartY;
+  if(Math.abs(dy) > 8) dragMoved = true;
+  if(dy > 50) setPanelCollapsed(true);
+  else if(dy < -50) setPanelCollapsed(false);
+});
+document.addEventListener('mouseup', ()=>{
+  if(dragStartY===null || !isMobile()) return;
+  if(!dragMoved) setPanelCollapsed(panel.classList.contains('collapsed') ? false : true);
+  dragStartY = null;
+});
+
+if(isMobile()) panel.classList.add('collapsed');
+
+panel.addEventListener('transitionend', e=>{
+  if(e.propertyName === 'height') scheduleMapViewSync();
+});
+window.addEventListener('resize', scheduleMapViewSync);
+
 (function(){
   const ph = document.getElementById('detailPhoto');
   let sx=null;
@@ -531,21 +823,20 @@ handle.addEventListener('click', ()=>{ if(isMobile()) panel.classList.toggle('co
   });
 })();
 
-// ===== Enter screen + remember device =====
 const GATE_COOKIE = "casa_sopra_unlocked";
 let mapStarted = false;
 
-function setUnlockCookie(){
-  const d = new Date(); d.setFullYear(d.getFullYear()+1);
-  document.cookie = `${GATE_COOKIE}=1; expires=${d.toUTCString()}; path=/; SameSite=Lax`;
-}
-function hasUnlockCookie(){
-  return document.cookie.split(';').some(c => c.trim().startsWith(GATE_COOKIE+'='));
-}
+// function setUnlockCookie(){
+//   const d = new Date(); d.setFullYear(d.getFullYear()+1);
+//   document.cookie = `${GATE_COOKIE}=1; expires=${d.toUTCString()}; path=/; SameSite=Lax`;
+// }
+// function hasUnlockCookie(){
+//   return document.cookie.split(';').some(c => c.trim().startsWith(GATE_COOKIE+'='));
+// }
 function startMap(){ if(!mapStarted){ mapStarted = true; loadGoogleMaps(); } }
 
-function unlock(remember){
-  if(remember) setUnlockCookie();
+function unlock(/* remember */){
+  // if(remember) setUnlockCookie();
   const gate = document.getElementById('gate');
   document.body.classList.remove('locked');
   gate.style.transition = 'opacity .5s ease';
@@ -554,13 +845,12 @@ function unlock(remember){
   startMap();
 }
 
-// returning visitor on this device: skip straight in
-if(hasUnlockCookie()){
-  const gate = document.getElementById('gate');
-  document.body.classList.remove('locked');
-  if(gate.parentNode) gate.remove();
-  startMap();
-}
+// if(hasUnlockCookie()){
+//   const gate = document.getElementById('gate');
+//   document.body.classList.remove('locked');
+//   if(gate.parentNode) gate.remove();
+//   startMap();
+// }
 </script>
 </body>
 </html>
