@@ -597,10 +597,7 @@ function photoGoto(i){
 }
 
 function openDetail(idx){
-  activeIdx = idx;
-  applyMapPadding();
-  focusPlaceOnMap(idx);
-  refreshChips();
+  activeIdx = idx; refreshChips();
   const p = PLACES[idx];
   document.querySelectorAll('.list-item').forEach(el=>el.classList.toggle('active', +el.dataset.idx===idx));
 
@@ -672,15 +669,25 @@ function openDetail(idx){
   document.getElementById('navNext').disabled = pos >= filtered.length - 1;
 
   detail.classList.add('show');
-  applyMapPadding();
-  focusPlaceOnMap(idx);
-  requestAnimationFrame(()=> focusPlaceOnMap(idx));
+  syncMapForPlace(idx);
+}
+function syncMapForPlace(idx){
+  if(!map || idx < 0) return;
+  try{
+    applyMapPadding();
+    focusPlaceOnMap(idx);
+    requestAnimationFrame(()=>{
+      try{
+        applyMapPadding();
+        focusPlaceOnMap(idx);
+      }catch(e){}
+    });
+  }catch(e){}
 }
 function closeDetail(){
   detail.classList.remove('show'); activeIdx=-1; refreshChips();
   document.querySelectorAll('.list-item').forEach(el=>el.classList.remove('active'));
-  applyMapPadding();
-  if(map) google.maps.event.trigger(map, 'resize');
+  scheduleMapViewSync();
 }
 function stepDetail(dir){
   const filtered = filteredIndices();
@@ -714,23 +721,28 @@ function sheetBottomPx(){
 let mapSyncOverlay = null;
 let mapPanGen = 0;
 function getMapSyncOverlay(){
-  if(!mapSyncOverlay){
+  if(!mapSyncOverlay && google.maps?.OverlayView){
     mapSyncOverlay = new google.maps.OverlayView();
     mapSyncOverlay.onAdd = function(){};
     mapSyncOverlay.draw = function(){};
   }
   return mapSyncOverlay;
 }
-function applyMapPadding(){
-  if(!map) return;
+function mapObstructionPx(){
   let bottom = 0, right = 0;
   if(isMobile()) bottom = sheetBottomPx();
   else if(detail.classList.contains('show')) right = (detail.offsetWidth || 540) + 44;
+  return { bottom, right };
+}
+function applyMapPadding(){
+  if(!map || typeof map.setPadding !== 'function') return;
+  const { bottom, right } = mapObstructionPx();
   map.setPadding({ top:0, right, bottom, left:0 });
 }
 function runMapNudge(center, gen){
-  if(!map || gen !== mapPanGen || !isMobile() || sheetBottomPx() <= 0) return;
-  const bottom = sheetBottomPx();
+  if(!map || gen !== mapPanGen || !google.maps?.OverlayView) return;
+  const { bottom, right } = mapObstructionPx();
+  if(bottom <= 0 && right <= 0) return;
   const ov = getMapSyncOverlay();
   ov.setMap(map);
   const proj = ov.getProjection();
@@ -739,7 +751,7 @@ function runMapNudge(center, gen){
   const pt = proj.fromLatLngToContainerPixel(latLng);
   if(!pt) return;
   const div = map.getDiv();
-  const dx = Math.round(pt.x - div.clientWidth / 2);
+  const dx = Math.round(pt.x - (div.clientWidth - right) / 2);
   const dy = Math.round(pt.y - (div.clientHeight - bottom) / 2);
   if(dx || dy) map.panBy(dx, dy);
 }
@@ -749,24 +761,20 @@ function focusPlaceOnMap(idx){
   if(!p) return;
   const gen = ++mapPanGen;
   const center = { lat: p.lat, lng: p.lng };
-  if(typeof map.moveCamera === 'function') map.moveCamera({ center });
-  else map.setCenter(center);
   map.panTo(center);
-  if(!isMobile() || sheetBottomPx() <= 0) return;
+  const { bottom, right } = mapObstructionPx();
+  if(bottom <= 0 && right <= 0) return;
   const ov = getMapSyncOverlay();
   ov.setMap(map);
   const nudge = ()=> runMapNudge(center, gen);
-  google.maps.event.addListenerOnce(map, 'idle', nudge);
+  if(google.maps?.event) google.maps.event.addListenerOnce(map, 'idle', nudge);
   setTimeout(nudge, 120);
 }
 function scheduleMapViewSync(){
-  applyMapPadding();
-  if(activeIdx >= 0) focusPlaceOnMap(activeIdx);
-  requestAnimationFrame(()=>{
-    applyMapPadding();
-    if(map) google.maps.event.trigger(map, 'resize');
-    if(activeIdx >= 0) focusPlaceOnMap(activeIdx);
-  });
+  if(activeIdx >= 0) syncMapForPlace(activeIdx);
+  else{
+    try{ applyMapPadding(); if(map) google.maps.event.trigger(map, 'resize'); }catch(e){}
+  }
 }
 
 function setPanelCollapsed(collapsed){
