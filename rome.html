@@ -720,10 +720,10 @@ function recenterActivePlace(){
   if(!map || activeIdx < 0) return;
   const p = PLACES[activeIdx];
   if(!p) return;
-  const latLng = new google.maps.LatLng(p.lat, p.lng);
-  const bottom = sheetBottomPx();
+  const latLng = { lat: p.lat, lng: p.lng };
   map.panTo(latLng);
-  if(!isMobile() || bottom <= 0) return;
+  if(!isMobile() || sheetBottomPx() <= 0) return;
+  const bottom = sheetBottomPx();
   const ov = getMapSyncOverlay();
   ov.setMap(map);
   google.maps.event.addListenerOnce(map, 'idle', ()=>{
@@ -737,15 +737,23 @@ function recenterActivePlace(){
     if(dx || dy) map.panBy(dx, dy);
   });
 }
+function focusMapOnActivePlace(){
+  if(!map || activeIdx < 0) return;
+  recenterActivePlace();
+  google.maps.event.addListenerOnce(map, 'idle', recenterActivePlace);
+}
 function syncMapView(){
   if(!map) return;
   map.setPadding({ top:0, right:0, bottom:sheetBottomPx(), left:0 });
   google.maps.event.trigger(map, 'resize');
-  if(activeIdx >= 0) recenterActivePlace();
 }
 function scheduleMapViewSync(){
   syncMapView();
-  requestAnimationFrame(syncMapView);
+  focusMapOnActivePlace();
+  requestAnimationFrame(()=>{
+    syncMapView();
+    focusMapOnActivePlace();
+  });
 }
 
 function setPanelCollapsed(collapsed){
