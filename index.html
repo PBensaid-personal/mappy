@@ -461,7 +461,7 @@ async function initMap(){
 
   buildList();
   loadAllPhotos();
-  applyMapPadding();
+  ensureOverlay();
 }
 window.initMap = initMap;
 
@@ -673,16 +673,7 @@ function openDetail(idx){
 }
 function syncMapForPlace(idx){
   if(!map || idx < 0) return;
-  try{
-    applyMapPadding();
-    focusPlaceOnMap(idx);
-    requestAnimationFrame(()=>{
-      try{
-        applyMapPadding();
-        focusPlaceOnMap(idx);
-      }catch(e){}
-    });
-  }catch(e){}
+  try{ focusPlaceOnMap(idx); }catch(e){}
 }
 function closeDetail(){
   detail.classList.remove('show'); activeIdx=-1; refreshChips();
@@ -719,7 +710,7 @@ function sheetBottomPx(){
   return panel.offsetHeight || 0;
 }
 let mapSyncOverlay = null;
-let mapPanGen = 0;
+let overlayAttached = false;
 function getMapSyncOverlay(){
   if(!mapSyncOverlay && google.maps?.OverlayView){
     mapSyncOverlay = new google.maps.OverlayView();
@@ -728,53 +719,38 @@ function getMapSyncOverlay(){
   }
   return mapSyncOverlay;
 }
+function ensureOverlay(){
+  const ov = getMapSyncOverlay();
+  if(ov && map && !overlayAttached){ ov.setMap(map); overlayAttached = true; }
+  return ov;
+}
 function mapObstructionPx(){
   let bottom = 0, right = 0;
   if(isMobile()) bottom = sheetBottomPx();
   else if(detail.classList.contains('show')) right = (detail.offsetWidth || 540) + 44;
   return { bottom, right };
 }
-function applyMapPadding(){
-  if(!map || typeof map.setPadding !== 'function') return;
-  const { bottom, right } = mapObstructionPx();
-  map.setPadding({ top:0, right, bottom, left:0 });
-}
-function runMapNudge(center, gen){
-  if(!map || gen !== mapPanGen || !google.maps?.OverlayView) return;
-  const { bottom, right } = mapObstructionPx();
-  if(bottom <= 0 && right <= 0) return;
-  const ov = getMapSyncOverlay();
-  ov.setMap(map);
-  const proj = ov.getProjection();
-  if(!proj) return;
-  const latLng = center.lat != null ? new google.maps.LatLng(center.lat, center.lng) : center;
-  const pt = proj.fromLatLngToContainerPixel(latLng);
-  if(!pt) return;
-  const div = map.getDiv();
-  const dx = Math.round(pt.x - (div.clientWidth - right) / 2);
-  const dy = Math.round(pt.y - (div.clientHeight - bottom) / 2);
-  if(dx || dy) map.panBy(dx, dy);
+function offsetCenterFor(center, bottom, right){
+  const ov = ensureOverlay();
+  const proj = ov && ov.getProjection && ov.getProjection();
+  if(!proj) return null;
+  const pt = proj.fromLatLngToContainerPixel(new google.maps.LatLng(center.lat, center.lng));
+  if(!pt) return null;
+  const target = proj.fromContainerPixelToLatLng(new google.maps.Point(pt.x + right / 2, pt.y + bottom / 2));
+  return target || null;
 }
 function focusPlaceOnMap(idx){
   if(!map || idx < 0) return;
   const p = PLACES[idx];
   if(!p) return;
-  const gen = ++mapPanGen;
   const center = { lat: p.lat, lng: p.lng };
-  map.panTo(center);
   const { bottom, right } = mapObstructionPx();
-  if(bottom <= 0 && right <= 0) return;
-  const ov = getMapSyncOverlay();
-  ov.setMap(map);
-  const nudge = ()=> runMapNudge(center, gen);
-  if(google.maps?.event) google.maps.event.addListenerOnce(map, 'idle', nudge);
-  setTimeout(nudge, 120);
+  if(bottom <= 0 && right <= 0){ map.panTo(center); return; }
+  const target = offsetCenterFor(center, bottom, right);
+  map.panTo(target || center);
 }
 function scheduleMapViewSync(){
   if(activeIdx >= 0) syncMapForPlace(activeIdx);
-  else{
-    try{ applyMapPadding(); if(map) google.maps.event.trigger(map, 'resize'); }catch(e){}
-  }
 }
 
 function setPanelCollapsed(collapsed){
