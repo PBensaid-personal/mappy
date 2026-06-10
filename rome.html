@@ -144,21 +144,23 @@
   .sheet-title-main,.sheet-title-sub,.sheet-grabber{display:none;}
 
   @media (max-width:760px){
-    :root{--sheet-h:72vh;}
+    :root{--sheet-h:72vh;--sheet-handle-h:64px;}
     .panel{top:auto;left:0;right:0;bottom:0;width:100%;height:var(--sheet-h);border-radius:22px 22px 0 0;
       box-shadow:0 -8px 30px rgba(0,0,0,.18);transition:height .28s ease;}
-    .panel.collapsed{height:44px;min-height:44px;}
-    .sheet-handle{display:flex;align-items:center;justify-content:space-between;gap:12px;
-      width:100%;height:44px;flex:0 0 44px;padding:0 22px;cursor:grab;touch-action:none;
+    .panel.collapsed{height:var(--sheet-handle-h);min-height:var(--sheet-handle-h);}
+    .sheet-handle{display:flex;align-items:center;justify-content:space-between;gap:14px;
+      width:100%;min-height:var(--sheet-handle-h);flex:0 0 var(--sheet-handle-h);
+      padding:16px 24px 10px;cursor:grab;touch-action:none;
       -webkit-user-select:none;user-select:none;}
     .sheet-title-main,.sheet-title-sub,.sheet-grabber{display:block;}
-    .sheet-title-main{font-size:23px;font-weight:800;letter-spacing:-.4px;line-height:1;flex:1 1 0;min-width:0;}
-    .sheet-title-sub{font-size:23px;font-weight:400;letter-spacing:-.4px;line-height:1;flex:1 1 0;min-width:0;text-align:right;}
+    .sheet-title-main{font-size:23px;font-weight:800;letter-spacing:-.4px;line-height:1.15;flex:1 1 0;min-width:0;}
+    .sheet-title-sub{font-size:23px;font-weight:400;letter-spacing:-.4px;line-height:1.15;flex:1 1 0;min-width:0;text-align:right;}
     .sheet-grabber{width:42px;height:5px;border-radius:3px;background:#a1a1aa;flex:0 0 42px;}
     .panel.collapsed .panel-head,
     .panel.collapsed .list{display:none;}
-    .panel-head{padding:6px 22px 12px;}
+    .panel-head{padding:2px 24px 10px;}
     .panel-head h1{display:none;}
+    .panel-head .filters{margin-top:6px;}
     .panel-head p{font-size:14px;margin-top:10px;}
     .list{padding:4px 12px 24px;}
     .li-body h3{font-size:17px;}
@@ -273,7 +275,7 @@ const HOME_KEY = "rome_home_base_v5";
 const TEMP_ORIGIN_KEY = "rome_temp_origin";
 
 const PLACES = [
-  {name:"Elizabeth Unique Hotel", lat:41.9072794, lng:12.4772303, type:"Hotel", home:true, address:"Via delle Colonnette 35, 00186 Roma RM, Italy", phone:"+39 06 3223633", website:"https://www.elizabethgroup.it/en/elizabeth-unique-rome/", photos:["https://cdn.blastness.biz/media/1303/unique-top/thumbs/full/1920-facciata-1.jpg","https://cdn.blastness.biz/media/1303/unique-vertical-gallery/thumbs/full/1024-vertical-hall-4.jpg","https://cdn.blastness.biz/media/1303/unique-vertical-gallery/thumbs/full/1024-vertical-library-2.jpg"], notes:"Home base. Boutique Design Hotel on Via delle Colonnette 35 — a quiet corner of the Tridente, steps from Piazza del Popolo. Perfect starting point for exploring Rome."},
+  {name:"Elizabeth Unique Hotel", pid:"ChIJEyz2blZgLxMRLtj5Vu3Ly2A", lat:41.9072794, lng:12.4772303, type:"Hotel", home:true, address:"Via delle Colonnette 35, 00186 Roma RM, Italy", phone:"+39 06 3223633", website:"https://www.elizabethgroup.it/en/elizabeth-unique-rome/", photos:["https://cdn.blastness.biz/media/1303/unique-top/thumbs/full/1920-facciata-1.jpg","https://cdn.blastness.biz/media/1303/unique-vertical-gallery/thumbs/full/1024-vertical-hall-4.jpg","https://cdn.blastness.biz/media/1303/unique-vertical-gallery/thumbs/full/1024-vertical-library-2.jpg"], notes:"Home base. Boutique Design Hotel on Via delle Colonnette 35 — a quiet corner of the Tridente, steps from Piazza del Popolo. Perfect starting point for exploring Rome."},
   {name:"Museo della Forma Urbis", pid:"ChIJZ7c578lhLxMR3G-oln-WuLM", lat:41.8872, lng:12.4923, type:"Museum", category:"Destination", address:"Via di San Gregorio, 30, 00184 Roma", notes:"New museum mixing archaeology and cartography. Floor embossed with an 18th-century map + 3rd-century stone slabs. Free archaeological park outside. €11 admission. Last entry 6:15 PM."},
   {name:"Domus Tiberiana (Palatine Hill)", pid:"ChIJA1aK_LRhLxMRJ6Hw0arUiyI", lat:41.8896, lng:12.4875, type:"Ruin", category:"Destination", address:"Palatine Hill, Via di San Gregorio, 00184 Roma", notes:"Reopened in 2023 after decades of closure. Multimedia exhibitions in a 1st-century palace. Prime sunset views of the Forum and Colosseum. Combined ticket with Forum + Colosseum €18, valid 24 hrs."},
   {name:"Uma Roma", pid:"ChIJV59_iGxhLxMRN9TZz9JP0rY", lat:41.8606, lng:12.4720, type:"Restaurant", category:"Food", address:"Via Girolamo Benzoni, 34, 00154 Roma", phone:"+39 334 385 5945", whatsapp:"+39 334 385 5945", notes:"Scandinavian-minimalist trattoria in Garbatella. Fermentation-focused tasting menu by two Italian chefs (one formerly at Noma). 4 courses + 4 snacks €50. Book well ahead — very popular."},
@@ -294,7 +296,7 @@ const PLACES = [
   {name:"Fatamorgana Gelato (Trastevere)", pid:"ChIJkVbVdTlgLxMRL_AfGNHHWhk", lat:41.8890, lng:12.4695, type:"Gelato", category:"Food", address:"Via Roma Libera, 11, 00153 Roma", phone:"+39 06 5833 4204", notes:"Internationally inspired flavors: Mexican Chamoy (tamarind, pepperoncino, Maldon salt) and Pierogi Ruskie (potato, ricotta, red onion, red wine, butter). Two flavors €3."},
   {name:"Ivo a Trastevere", pid:"ChIJLwrxODhgLxMRQEdqiR-QOyk", lat:41.8887, lng:12.4692, type:"Restaurant", category:"Food", address:"Via di San Francesco a Ripa, 158, 00153 Roma", phone:"+39 06 581 7082", notes:"No-nonsense purveyor of classic Roman thin-crust pizzas since the 1960s. Simple, crowded, and beloved. A local institution for Sunday lunch."}
 ];
-const DEFAULT_HOME = { name:PLACES[0].name, lat:PLACES[0].lat, lng:PLACES[0].lng, address:PLACES[0].address, placeIdx:0, custom:false };
+const DEFAULT_HOME = { name:PLACES[0].name, lat:PLACES[0].lat, lng:PLACES[0].lng, address:PLACES[0].address, pid:PLACES[0].pid, placeIdx:0, custom:false };
 const TYPE_GRADIENT = {
   "Hotel":"linear-gradient(135deg,#c9a227,#8b6914)",
   "Museum":"linear-gradient(135deg,#6b7fb0,#3a4f80)",
@@ -310,6 +312,12 @@ const TYPE_GRADIENT = {
   "Gelato":"linear-gradient(135deg,#e87a8a,#c04060)"
 };
 function gradFor(p){ return TYPE_GRADIENT[p.type] || "linear-gradient(135deg,#9ca3af,#4b5563)"; }
+function placeMetaHtml(p){
+  if(p.rating != null){
+    return `<span><b>${p.rating.toFixed(1)}</b> <span class="star">★</span> (${(p.count||0).toLocaleString()})</span> · <span>${p.type}</span>`;
+  }
+  return p.type ? `<span>${p.type}</span>` : '';
+}
 const photoIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`;
 
 let map, activeIdx = -1, markers = [], homeMarker = null, activeFilter = "all";
@@ -322,7 +330,7 @@ function loadHomeBase(){
     if(s){
       const h = JSON.parse(s);
       if(h && typeof h.lat === "number" && typeof h.lng === "number" && h.name){
-        if(h.placeIdx === 0) return {...DEFAULT_HOME, ...h, name:DEFAULT_HOME.name, lat:DEFAULT_HOME.lat, lng:DEFAULT_HOME.lng, address:DEFAULT_HOME.address};
+        if(h.placeIdx === 0) return {...DEFAULT_HOME, ...h, name:DEFAULT_HOME.name, lat:DEFAULT_HOME.lat, lng:DEFAULT_HOME.lng, address:DEFAULT_HOME.address, pid:DEFAULT_HOME.pid};
         return h;
       }
     }
@@ -447,7 +455,7 @@ async function initMap(){
 
   buildList();
   loadAllPhotos();
-  updateMapPadding(false);
+  syncMapView();
 }
 window.initMap = initMap;
 
@@ -479,9 +487,7 @@ function buildList(){
     const div = document.createElement('div');
     div.className = 'list-item' + (isHomePlace(idx) ? ' home' : '');
     div.dataset.idx = idx;
-    const meta = (p.rating != null)
-      ? `<span><b>${p.rating.toFixed(1)}</b> <span class="star">★</span> (${p.count.toLocaleString()})</span>`
-      : '';
+    const meta = placeMetaHtml(p);
     const thumbInner = (p.photos && p.photos.length)
       ? `<img src="${p.photos[0]}" alt="" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;">`
       : photoIcon;
@@ -509,15 +515,27 @@ function setThumb(idx){
     el.innerHTML = `<img src="${p.photos[0]}" alt="" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;">`;
   }
 }
+function refreshListMeta(idx){
+  const p = PLACES[idx];
+  const el = document.querySelector(`.list-item[data-idx="${idx}"] .li-meta`);
+  if(!el) return;
+  const meta = placeMetaHtml(p);
+  if(meta){
+    el.innerHTML = meta;
+    el.style.display = '';
+  }
+}
 
 async function fetchPlaceDetails(p){
   if(!p.pid) return;
   try{
-    const r = await fetch(`https://places.googleapis.com/v1/places/${p.pid}?fields=photos,formattedAddress,internationalPhoneNumber&key=${GOOGLE_MAPS_API_KEY}`);
+    const r = await fetch(`https://places.googleapis.com/v1/places/${p.pid}?fields=photos,formattedAddress,internationalPhoneNumber,rating,userRatingCount&key=${GOOGLE_MAPS_API_KEY}`);
     if(!r.ok) return;
     const data = await r.json();
     if(data.formattedAddress) p.address = data.formattedAddress;
     if(data.internationalPhoneNumber && !p.phone) p.phone = data.internationalPhoneNumber;
+    if(data.rating != null) p.rating = data.rating;
+    if(data.userRatingCount != null) p.count = data.userRatingCount;
     if(data.photos && data.photos.length){
       p.photos = data.photos.slice(0,3).map(ph =>
         `https://places.googleapis.com/v1/${ph.name}/media?maxWidthPx=900&key=${GOOGLE_MAPS_API_KEY}`);
@@ -529,6 +547,7 @@ async function loadAllPhotos(){
   for(const [idx,p] of PLACES.entries()){
     await fetchPlaceDetails(p);
     if(p.photos) setThumb(idx);
+    refreshListMeta(idx);
     if(idx===activeIdx) openDetail(idx);
   }
 }
@@ -595,8 +614,9 @@ function openDetail(idx){
   numEl.style.background = isHomePlace(idx) ? '#f5a623' : '';
   document.getElementById('dName').textContent = p.name;
   const subEl = document.getElementById('dSub');
-  if(p.rating != null){
-    subEl.innerHTML = `<b>${p.rating.toFixed(1)}</b> <span class="star">★</span> <span>(${p.count.toLocaleString()})</span>`;
+  const subMeta = placeMetaHtml(p);
+  if(subMeta){
+    subEl.innerHTML = subMeta;
     subEl.style.display = 'flex';
   } else {
     subEl.innerHTML = '';
@@ -621,7 +641,16 @@ function openDetail(idx){
   else notes.style.display='none';
 
   renderDetailExtra(p);
-  if(!p.address && p.pid) fetchPlaceDetails(p).then(()=>{ if(activeIdx===idx) renderDetailExtra(p); });
+  if(p.pid) fetchPlaceDetails(p).then(()=>{
+    if(activeIdx!==idx) return;
+    refreshListMeta(idx);
+    const sub = placeMetaHtml(p);
+    if(sub){
+      document.getElementById('dSub').innerHTML = sub;
+      document.getElementById('dSub').style.display = 'flex';
+    }
+    renderDetailExtra(p);
+  });
 
   let c='';
   if(p.phone && !p.whatsapp) c += `<a href="tel:${p.phone.replace(/\s/g,'')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${p.phone}</a>`;
@@ -635,12 +664,12 @@ function openDetail(idx){
   document.getElementById('navNext').disabled = pos >= filtered.length - 1;
 
   detail.classList.add('show');
-  requestAnimationFrame(()=> updateMapPadding(true));
+  scheduleMapViewSync();
 }
 function closeDetail(){
   detail.classList.remove('show'); activeIdx=-1; refreshChips();
   document.querySelectorAll('.list-item').forEach(el=>el.classList.remove('active'));
-  requestAnimationFrame(()=> updateMapPadding(false));
+  scheduleMapViewSync();
 }
 function nav(dir){
   const filtered = filteredIndices();
@@ -678,19 +707,51 @@ function sheetBottomPx(){
   if(detail.classList.contains('show')) return detail.offsetHeight || 0;
   return panel.offsetHeight || 0;
 }
-function updateMapPadding(recenter){
+let mapSyncOverlay = null;
+function getMapSyncOverlay(){
+  if(!mapSyncOverlay){
+    mapSyncOverlay = new google.maps.OverlayView();
+    mapSyncOverlay.onAdd = function(){};
+    mapSyncOverlay.draw = function(){};
+  }
+  return mapSyncOverlay;
+}
+function recenterActivePlace(){
+  if(!map || activeIdx < 0) return;
+  const p = PLACES[activeIdx];
+  if(!p) return;
+  const latLng = new google.maps.LatLng(p.lat, p.lng);
+  const bottom = sheetBottomPx();
+  map.panTo(latLng);
+  if(!isMobile() || bottom <= 0) return;
+  const ov = getMapSyncOverlay();
+  ov.setMap(map);
+  google.maps.event.addListenerOnce(map, 'idle', ()=>{
+    const proj = ov.getProjection();
+    if(!proj) return;
+    const pt = proj.fromLatLngToContainerPixel(latLng);
+    if(!pt) return;
+    const div = map.getDiv();
+    const dx = Math.round(pt.x - div.clientWidth / 2);
+    const dy = Math.round(pt.y - (div.clientHeight - bottom) / 2);
+    if(dx || dy) map.panBy(dx, dy);
+  });
+}
+function syncMapView(){
   if(!map) return;
   map.setPadding({ top:0, right:0, bottom:sheetBottomPx(), left:0 });
-  if(recenter && activeIdx >= 0){
-    const p = PLACES[activeIdx];
-    if(p) map.panTo({ lat:p.lat, lng:p.lng });
-  }
+  google.maps.event.trigger(map, 'resize');
+  if(activeIdx >= 0) recenterActivePlace();
+}
+function scheduleMapViewSync(){
+  syncMapView();
+  requestAnimationFrame(syncMapView);
 }
 
 function setPanelCollapsed(collapsed){
   if(!isMobile()) return;
   panel.classList.toggle('collapsed', collapsed);
-  updateMapPadding(activeIdx >= 0 && detail.classList.contains('show'));
+  scheduleMapViewSync();
 }
 
 handle.addEventListener('touchstart', e=>{
@@ -735,9 +796,9 @@ document.addEventListener('mouseup', e=>{
 if(isMobile()) panel.classList.add('collapsed');
 
 panel.addEventListener('transitionend', e=>{
-  if(e.propertyName === 'height') updateMapPadding(activeIdx >= 0 && detail.classList.contains('show'));
+  if(e.propertyName === 'height') scheduleMapViewSync();
 });
-window.addEventListener('resize', ()=> updateMapPadding(activeIdx >= 0 && detail.classList.contains('show')));
+window.addEventListener('resize', scheduleMapViewSync);
 
 // gallery: swipe + keyboard
 (function(){
