@@ -61,8 +61,9 @@
   .list-item.home .li-num{background:#f5a623;}
   .thumb{position:relative;width:80px;height:80px;flex:0 0 80px;border-radius:14px;background:#ededed;
     display:flex;align-items:center;justify-content:center;overflow:hidden;}
-  .thumb .li-num{position:absolute;top:0;left:0;z-index:1;box-shadow:0 1px 5px rgba(0,0,0,.4);}
-  .thumb svg{width:30px;height:30px;opacity:.4;color:#fff;}
+  .thumb .li-num{position:absolute;top:0;left:0;z-index:2;box-shadow:0 1px 5px rgba(0,0,0,.4);}
+  .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+  .thumb svg{width:30px;height:30px;opacity:.4;color:#fff;position:relative;z-index:0;}
   .li-body{min-width:0;flex:1;}
   .li-title{display:flex;align-items:center;gap:10px;min-width:0;}
   .li-title h3{margin:0;font-size:18px;font-weight:700;letter-spacing:-.2px;min-width:0;}
@@ -495,7 +496,7 @@ function buildList(){
     div.dataset.idx = idx;
     const meta = placeMetaHtml(p);
     const thumbInner = (p.photos && p.photos.length)
-      ? `<img src="${p.photos[0]}" alt="" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;">`
+      ? `<img src="${p.photos[0]}" alt="" loading="lazy" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">`
       : photoIcon;
     div.innerHTML = `
       <div class="thumb" style="background:${gradFor(p)}"><span class="li-num">${idx+1}</span>${thumbInner}</div>
@@ -515,10 +516,18 @@ function buildList(){
 function setThumb(idx){
   const p = PLACES[idx];
   const el = document.querySelector(`.list-item[data-idx="${idx}"] .thumb`);
-  if(!el) return;
-  if(p.photos && p.photos.length){
-    el.innerHTML = `<img src="${p.photos[0]}" alt="" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;">`;
+  if(!el || !p.photos?.length) return;
+  let img = el.querySelector('img');
+  if(!img){
+    img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    img.onerror = ()=> img.style.display='none';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+    el.appendChild(img);
   }
+  img.src = p.photos[0];
+  img.style.display = '';
 }
 function refreshListMeta(idx){
   const p = PLACES[idx];
