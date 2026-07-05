@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "mcp__sandbox__sheets__get_sheet_data",
+      "mcp__sandbox__sheets__format_cells",
+      "mcp__sandbox__sheets__update_range",
+      "Bash(curl -s \"https://docs.google.com/spreadsheets/d/1XOTG14SyH4OqPo2nw87Pef7KG7MGLMg5KEdQBf5c3io/gviz/tq?tqx=out:json&sheet=Rome&headers=1\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://docs.google.com/spreadsheets/d/1XOTG14SyH4OqPo2nw87Pef7KG7MGLMg5KEdQBf5c3io/gviz/tq?tqx=out:json&sheet=Rome&headers=1\")",
+      "mcp__sandbox__sheets__clear_values"
+    ]
+  }
+}
