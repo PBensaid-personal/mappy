@@ -138,8 +138,9 @@
   .nav-count{font-size:17px;color:#4b5563;font-weight:500;}
 
   /* add-place */
-  .add-chip{border:1.5px solid var(--accent);background:var(--accent);color:#fff;border-radius:20px;
-    padding:7px 14px;font-size:13.5px;font-weight:600;cursor:pointer;transition:opacity .14s;}
+  .add-chip{border:1.5px solid var(--accent);background:var(--accent);color:#fff;border-radius:50%;
+    width:32px;height:32px;padding:0;font-size:22px;line-height:1;font-weight:400;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;transition:opacity .14s;flex:0 0 auto;}
   .add-chip:hover{opacity:.8;}
   .add-overlay{position:fixed;inset:0;z-index:3000;background:rgba(15,23,32,.45);display:none;
     align-items:center;justify-content:center;padding:20px;}
@@ -254,10 +255,7 @@
     <h1>Rome<span>Fall 2026</span></h1>
     <div class="filters" id="filters">
       <button class="filter-chip on" data-cat="all">All</button>
-      <button class="filter-chip" data-cat="Food">Food</button>
-      <button class="filter-chip" data-cat="Fun">Fun</button>
-      <button class="filter-chip" data-cat="Destination">Desinations</button>
-      <button class="add-chip" id="addBtn" type="button" style="display:none">＋ Add place</button>
+      <button class="add-chip" id="addBtn" type="button" style="display:none" aria-label="Add place" title="Add place">+</button>
     </div>
   </div>
   <div class="list" id="list"></div>
@@ -611,7 +609,26 @@ function updateMarkerVisibility(){
   });
 }
 
+function buildFilters(){
+  const filtersEl = document.getElementById('filters');
+  const addBtn = document.getElementById('addBtn');
+  // Distinct categories from the sheet, alphabetical.
+  const cats = [...new Set(PLACES.map(p => p.category).filter(Boolean))].sort();
+  // If the active filter's category disappeared, fall back to "all".
+  if(activeFilter !== 'all' && !cats.includes(activeFilter)) activeFilter = 'all';
+  filtersEl.querySelectorAll('.filter-chip').forEach(c => { if(c.dataset.cat !== 'all') c.remove(); });
+  filtersEl.querySelector('.filter-chip[data-cat="all"]').classList.toggle('on', activeFilter === 'all');
+  cats.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'filter-chip' + (activeFilter === cat ? ' on' : '');
+    b.dataset.cat = cat;
+    b.textContent = cat;
+    filtersEl.insertBefore(b, addBtn);
+  });
+}
+
 function buildList(){
+  buildFilters();
   const listEl = document.getElementById('list');
   listEl.innerHTML = '';
   PLACES.forEach((p, idx)=>{
