@@ -48,6 +48,11 @@
   .panel-head h1{margin:0;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-.4px;
     display:flex;justify-content:space-between;align-items:baseline;gap:12px;}
   .panel-head h1 span{font-weight:normal;}
+  .day-select{font-family:var(--font);font-weight:400;color:var(--ink);border:1.5px solid var(--line);
+    background:#fff;cursor:pointer;font-size:15px;padding:6px 12px;border-radius:12px;max-width:100%;
+    align-self:center;-webkit-appearance:menulist;appearance:auto;}
+  .day-select:hover{background:var(--soft);}
+  .sheet-title-sub .day-select{float:right;font-size:15px;}
   .panel-head p{margin:16px 0 0;color:#4b5563;font-size:16px;line-height:1.45;}
   .filters{display:flex;gap:8px;margin:14px 0 0;flex-wrap:wrap;}
   .filter-chip{border:1.5px solid #e2e2e2;background:#fff;border-radius:20px;
@@ -249,10 +254,10 @@
   <div class="sheet-handle" id="handle">
     <span class="sheet-title-main">Rome</span>
     <span class="sheet-grabber" aria-hidden="true"></span>
-    <span class="sheet-title-sub">Fall 2026</span>
+    <span class="sheet-title-sub"><select class="day-select" id="dayFilterMobile" aria-label="Filter by day"></select></span>
   </div>
   <div class="panel-head">
-    <h1>Rome<span>Fall 2026</span></h1>
+    <h1>Rome<select class="day-select" id="dayFilterDesktop" aria-label="Filter by day"></select></h1>
     <div class="filters" id="filters">
       <button class="filter-chip on" data-cat="all">All</button>
       <button class="add-chip" id="addBtn" type="button" style="display:none" aria-label="Add place" title="Add place">+</button>
@@ -382,6 +387,8 @@ async function fetchSheetPlaces(){
     if(name == null || String(name).trim() === '') continue;
     const p = { name:String(name), type:get('type')||'', notes:get('notes')||'' };
     if(get('category')) p.category = get('category');
+    const day = get('day');
+    if(day !== null && String(day).trim() !== '') p.day = String(day).trim();
     if(get('home') === true || String(get('home')).toUpperCase() === 'TRUE') p.home = true;
     if(get('pid')) p.pid = get('pid');
     const lat = get('lat'), lng = get('lng');
@@ -433,7 +440,7 @@ function placeMetaHtml(p){
 }
 const photoIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`;
 
-let map, activeIdx = -1, markers = [], homeMarker = null, activeFilter = "all";
+let map, activeIdx = -1, markers = [], homeMarker = null, activeFilter = "all", activeDay = "all";
 let homeBase = null;
 let tempOrigin = loadTempOrigin();
 
@@ -596,7 +603,10 @@ function isHomePlace(idx){
   return !homeBase.custom && homeBase.placeIdx === idx;
 }
 function placeMatchesFilter(p){
-  return activeFilter === "all" || p.category === activeFilter;
+  const catOk = activeFilter === "all" || p.category === activeFilter;
+  // Home base always shows so it anchors any single-day view.
+  const dayOk = activeDay === "all" || p.home || p.day === activeDay;
+  return catOk && dayOk;
 }
 function filteredIndices(){
   return PLACES.map((_, i)=>i).filter(i=>placeMatchesFilter(PLACES[i]));
@@ -627,8 +637,24 @@ function buildFilters(){
   });
 }
 
+function buildDayFilter(){
+  const days = [...new Set(PLACES.map(p => p.day).filter(Boolean))].sort((a,b)=> (+a) - (+b));
+  document.querySelectorAll('.day-select').forEach(sel => {
+    sel.innerHTML = '<option value="all">All pins</option>' +
+      days.map(d => `<option value="${d}">Day ${d}</option>`).join('');
+    sel.value = activeDay;
+  });
+}
+function setDay(val){
+  activeDay = val;
+  document.querySelectorAll('.day-select').forEach(s => { s.value = val; });
+  buildList();
+  if(activeIdx >= 0 && !placeMatchesFilter(PLACES[activeIdx])) closeDetail();
+}
+
 function buildList(){
   buildFilters();
+  buildDayFilter();
   const listEl = document.getElementById('list');
   listEl.innerHTML = '';
   PLACES.forEach((p, idx)=>{
@@ -858,6 +884,13 @@ document.getElementById('filters').addEventListener('click', e=>{
   document.querySelectorAll('.filter-chip').forEach(c=>c.classList.toggle('on', c===chip));
   buildList();
   if(activeIdx>=0 && !placeMatchesFilter(PLACES[activeIdx])) closeDetail();
+});
+
+document.querySelectorAll('.day-select').forEach(s => {
+  s.addEventListener('change', () => setDay(s.value));
+  // Inside the mobile drag handle: don't let taps toggle the sheet.
+  ['pointerdown','touchstart','mousedown','click'].forEach(ev =>
+    s.addEventListener(ev, e => e.stopPropagation()));
 });
 
 const panel = document.getElementById('panel');
