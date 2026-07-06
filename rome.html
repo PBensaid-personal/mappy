@@ -1198,6 +1198,9 @@ window.addEventListener('resize', scheduleMapViewSync);
     cleanup();
   });
   listEl.addEventListener('pointercancel', cleanup);
+  // On touch, scrolling is driven by touchmove and ignores preventDefault from a
+  // passive listener — so stop the list scrolling while a drag is in progress.
+  listEl.addEventListener('touchmove', e=>{ if(dragging) e.preventDefault(); }, { passive:false });
   // Suppress the click that follows a drag so it doesn't open the detail card.
   listEl.addEventListener('click', e=>{
     if(justDragged){ justDragged = false; e.stopPropagation(); e.preventDefault(); }
