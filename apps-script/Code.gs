@@ -28,7 +28,7 @@ const CITY_DIR = 'photos/rome';
 // Sheet columns (1-based): A name, B category, C type, D notes, E home,
 // F slug, G pid, H lat, I lng, J rating, K count, L address, M phone,
 // N whatsapp, O website
-const COL_NAME = 1, COL_SLUG = 6, COL_PID = 7;
+const COL_NAME = 1, COL_SLUG = 6, COL_PID = 7, COL_DAY = 16;
 
 function onOpen(){
   SpreadsheetApp.getUi().createMenu('Mappy')
@@ -37,11 +37,12 @@ function onOpen(){
 }
 
 function doPost(e){
+  const p = (e && e.parameter) || {};
+  if(p.action === 'reorder') return handleReorder(p);
   const out = { ok:false };
   const lock = LockService.getScriptLock();
   lock.tryLock(30000);
   try{
-    const p = (e && e.parameter) || {};
     const name = String(p.name || '').trim();
     if(!name) throw new Error('name is required');
     const sh = sheet();
@@ -55,6 +56,50 @@ function doPost(e){
       out.baked = false;
       out.bakeError = String(bakeErr);
     }
+  }catch(err){
+    out.error = String(err);
+  }finally{
+    lock.releaseLock();
+  }
+  return ContentService.createTextOutput(JSON.stringify(out))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Reorder rows to match an incoming list of {k, d} — k = slug (or name), d = Day
+// value to assign. Preserves every column and rewrites the Day column from the
+// payload; rows not named keep their relative order and day at the bottom.
+function handleReorder(p){
+  const out = { ok:false };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(30000);
+  try{
+    const order = JSON.parse(p.order || '[]');
+    if(!Array.isArray(order) || !order.length) throw new Error('empty order');
+    const sh = sheet();
+    const last = sh.getLastRow();
+    if(last < 2) throw new Error('no rows');
+    const width = sh.getLastColumn();
+    const rng = sh.getRange(2, 1, last - 1, width);
+    const rows = rng.getValues();
+    const keyOf = r => String((r[COL_SLUG - 1] || r[COL_NAME - 1]) || '');
+    const byKey = new Map();
+    rows.forEach(r => { const k = keyOf(r); if(k && !byKey.has(k)) byKey.set(k, r); });
+    const seen = {};
+    const newRows = [];
+    order.forEach(item => {
+      const key = String(item && item.k != null ? item.k : item);
+      if(byKey.has(key) && !seen[key]){
+        const row = byKey.get(key);
+        if(width >= COL_DAY) row[COL_DAY - 1] = (item && item.d != null) ? String(item.d) : '';
+        newRows.push(row);
+        seen[key] = true;
+      }
+    });
+    rows.forEach(r => { const k = keyOf(r); if(!seen[k]){ newRows.push(r); seen[k] = true; } });
+    if(newRows.length !== rows.length) throw new Error('row count mismatch');
+    rng.setValues(newRows);
+    out.ok = true;
+    out.reordered = newRows.length;
   }catch(err){
     out.error = String(err);
   }finally{

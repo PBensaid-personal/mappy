@@ -70,6 +70,13 @@
     cursor:pointer;transition:background .14s ease;margin-bottom:6px;}
   .list-item:hover,.list-item.active{background:var(--soft);}
   .list-item.unbaked{opacity:.6;}
+  .list.reorderable .list-item:not(.home){cursor:grab;}
+  .list-item.drag-src{opacity:.55;background:var(--soft);box-shadow:0 8px 22px rgba(0,0,0,.18);
+    cursor:grabbing;touch-action:none;}
+  .day-divider{display:flex;align-items:center;gap:12px;padding:16px 16px 6px;user-select:none;}
+  .day-divider span{font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.09em;
+    color:#9ca3af;white-space:nowrap;flex:0 0 auto;}
+  .day-divider::after{content:"";flex:1 1 auto;height:1px;background:var(--line);}
   .li-num{flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:var(--accent);
     color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;}
   .list-item.home .li-num{background:#f5a623;}
@@ -398,6 +405,7 @@ async function fetchSheetPlaces(){
     for(const k of ['address','phone','whatsapp','website']) if(get(k)) p[k] = get(k);
     const slug = get('slug');
     if(slug){
+      p.slug = slug;
       p.thumb = `photos/rome/${slug}-thumb.jpg`;
       p.photos = [1,2,3].map(n => `photos/rome/${slug}-${n}.jpg`);
     }
@@ -650,35 +658,68 @@ function setDay(val){
   document.querySelectorAll('.day-select').forEach(s => { s.value = val; });
   buildList();
   if(activeIdx >= 0 && !placeMatchesFilter(PLACES[activeIdx])) closeDetail();
+  fitMapToVisible();
+}
+
+function reorderEnabled(){ return activeFilter === 'all' && activeDay === 'all'; }
+
+function makeListItem(idx){
+  const p = PLACES[idx];
+  const div = document.createElement('div');
+  div.className = 'list-item' + (isHomePlace(idx) ? ' home' : '') + (p.unbaked ? ' unbaked' : '');
+  div.dataset.idx = idx;
+  const meta = p.unbaked ? '<span>New — pin & photos pending bake</span>' : placeMetaHtml(p);
+  const thumbSrc = p.thumb || (p.photos && p.photos[0]);
+  const thumbInner = thumbSrc
+    ? `<img src="${thumbSrc}" alt="" loading="lazy" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">`
+    : photoIcon;
+  div.innerHTML = `
+    <div class="thumb" style="background:${gradFor(p)}"><span class="li-num">${idx+1}</span>${thumbInner}</div>
+    <div class="li-body">
+      <div class="li-title">
+        <h3>${p.name}</h3>
+      </div>
+      ${meta ? `<div class="li-meta">${meta}</div>` : ''}
+      <div class="li-desc">${p.notes||''}</div>
+    </div>`;
+  div.addEventListener('click', ()=> openDetail(idx));
+  return div;
+}
+
+function makeDivider(label, day){
+  const d = document.createElement('div');
+  d.className = 'day-divider';
+  d.dataset.day = day;
+  d.innerHTML = `<span>${label}</span>`;
+  return d;
 }
 
 function buildList(){
   buildFilters();
   buildDayFilter();
   const listEl = document.getElementById('list');
+  listEl.classList.toggle('reorderable', reorderEnabled());
   listEl.innerHTML = '';
-  PLACES.forEach((p, idx)=>{
-    if(!placeMatchesFilter(p)) return;
-    const div = document.createElement('div');
-    div.className = 'list-item' + (isHomePlace(idx) ? ' home' : '') + (p.unbaked ? ' unbaked' : '');
-    div.dataset.idx = idx;
-    const meta = p.unbaked ? '<span>New — pin & photos pending bake</span>' : placeMetaHtml(p);
-    const thumbSrc = p.thumb || (p.photos && p.photos[0]);
-    const thumbInner = thumbSrc
-      ? `<img src="${thumbSrc}" alt="" loading="lazy" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">`
-      : photoIcon;
-    div.innerHTML = `
-      <div class="thumb" style="background:${gradFor(p)}"><span class="li-num">${idx+1}</span>${thumbInner}</div>
-      <div class="li-body">
-        <div class="li-title">
-          <h3>${p.name}</h3>
-        </div>
-        ${meta ? `<div class="li-meta">${meta}</div>` : ''}
-        <div class="li-desc">${p.notes||''}</div>
-      </div>`;
-    div.addEventListener('click', ()=> openDetail(idx));
-    listEl.appendChild(div);
-  });
+  const visible = i => placeMatchesFilter(PLACES[i]);
+
+  if(activeDay === 'all'){
+    // Grouped view: home first, then a labelled section per day, then unscheduled.
+    PLACES.forEach((p, idx)=>{ if(p.home && visible(idx)) listEl.appendChild(makeListItem(idx)); });
+    const days = [...new Set(PLACES.filter(p=>!p.home && p.day).map(p=>p.day))].sort((a,b)=> (+a)-(+b));
+    days.forEach(d=>{
+      const items = PLACES.map((p,i)=>i).filter(i=> !PLACES[i].home && PLACES[i].day===d && visible(i));
+      if(!items.length) return;
+      listEl.appendChild(makeDivider('Day ' + d, d));
+      items.forEach(i=> listEl.appendChild(makeListItem(i)));
+    });
+    const untag = PLACES.map((p,i)=>i).filter(i=> !PLACES[i].home && !PLACES[i].day && visible(i));
+    if(untag.length){
+      listEl.appendChild(makeDivider('Unscheduled', ''));
+      untag.forEach(i=> listEl.appendChild(makeListItem(i)));
+    }
+  } else {
+    PLACES.forEach((p, idx)=>{ if(visible(idx)) listEl.appendChild(makeListItem(idx)); });
+  }
   updateMarkerVisibility();
 }
 
@@ -947,6 +988,29 @@ function scheduleMapViewSync(){
   if(activeIdx >= 0) syncMapForPlace(activeIdx);
 }
 
+// Pixels of the map currently covered by UI, so fitBounds can pad toward the
+// visible area. Reflects live sheet state (mobile: collapsed vs expanded height).
+function viewObstruction(){
+  if(isMobile()) return { top:0, right:0, bottom: sheetBottomPx(), left:0 };
+  const rightEl = detail.classList.contains('show') ? detail : panel;
+  return { top:0, right:(rightEl.offsetWidth || 430) + 44, bottom:0, left:0 };
+}
+function fitMapToVisible(){
+  if(!map || !window.google || !google.maps) return;
+  const pts = PLACES.filter(p => placeMatchesFilter(p) && p.lat != null);
+  if(!pts.length) return;
+  const o = viewObstruction(), gap = 48;
+  if(pts.length === 1){
+    map.setZoom(15);
+    const c = { lat: pts[0].lat, lng: pts[0].lng };
+    map.panTo(offsetCenterFor(c, o.bottom, o.right) || c);
+    return;
+  }
+  const b = new google.maps.LatLngBounds();
+  pts.forEach(p => b.extend({ lat: p.lat, lng: p.lng }));
+  map.fitBounds(b, { top: gap+o.top, right: gap+o.right, bottom: gap+o.bottom, left: gap+o.left });
+}
+
 function setPanelCollapsed(collapsed){
   if(!isMobile()) return;
   panel.classList.toggle('collapsed', collapsed);
@@ -1076,6 +1140,105 @@ window.addEventListener('resize', scheduleMapViewSync);
   }
   submitEl.addEventListener('click', submit);
   nameEl.addEventListener('keydown', e=>{ if(e.key === 'Enter') submit(); });
+})();
+
+// ===== Drag-to-reorder the list (long-press, unfiltered view only) =====
+// Reorders PLACES + markers optimistically, then persists the new row order
+// to the sheet via the Apps Script "reorder" action (keyed by slug/name).
+(function(){
+  const listEl = document.getElementById('list');
+  let src = null, holdTimer = null, dragging = false, startY = 0, pointerId = null, justDragged = false;
+
+  function beginDrag(){
+    if(!src) return;
+    dragging = true;
+    if(activeIdx >= 0) closeDetail();
+    src.classList.add('drag-src');
+    document.body.style.userSelect = 'none';
+    try{ src.setPointerCapture(pointerId); }catch(_){}
+  }
+  function cleanup(){
+    clearTimeout(holdTimer);
+    if(src) src.classList.remove('drag-src');
+    document.body.style.userSelect = '';
+    src = null; dragging = false; pointerId = null;
+  }
+
+  listEl.addEventListener('pointerdown', e=>{
+    if(!reorderEnabled()) return;
+    const item = e.target.closest('.list-item');
+    if(!item || item.classList.contains('home')) return;
+    src = item; startY = e.clientY; pointerId = e.pointerId;
+    holdTimer = setTimeout(beginDrag, 400);
+  });
+  listEl.addEventListener('pointermove', e=>{
+    if(!src) return;
+    if(!dragging){
+      if(Math.abs(e.clientY - startY) > 10){ clearTimeout(holdTimer); src = null; } // scroll intent
+      return;
+    }
+    e.preventDefault();
+    const y = e.clientY;
+    // Consider dividers AND items as boundaries, so crossing a divider moves
+    // the item into that day group. Never land above the first divider (home zone).
+    const kids = [...listEl.children].filter(el => el !== src && !el.classList.contains('home'));
+    let ref = null;
+    for(const el of kids){
+      const r = el.getBoundingClientRect();
+      if(y < r.top + r.height / 2){ ref = el; break; }
+    }
+    const firstDivider = listEl.querySelector('.day-divider');
+    if(ref && ref === firstDivider){ ref = firstDivider.nextSibling === src ? src.nextSibling : firstDivider.nextSibling; }
+    if(ref) listEl.insertBefore(src, ref); else listEl.appendChild(src);
+  });
+  listEl.addEventListener('pointerup', e=>{
+    clearTimeout(holdTimer);
+    if(dragging){ e.preventDefault(); commitOrder(); justDragged = true; }
+    cleanup();
+  });
+  listEl.addEventListener('pointercancel', cleanup);
+  // Suppress the click that follows a drag so it doesn't open the detail card.
+  listEl.addEventListener('click', e=>{
+    if(justDragged){ justDragged = false; e.stopPropagation(); e.preventDefault(); }
+  }, true);
+
+  function commitOrder(){
+    // Walk the DOM: dividers set the current day, items inherit it.
+    const seq = [];
+    let curDay = '';
+    [...listEl.children].forEach(el => {
+      if(el.classList.contains('day-divider')){ curDay = el.dataset.day || ''; return; }
+      if(el.classList.contains('list-item')){
+        seq.push({ idx: +el.dataset.idx, day: el.classList.contains('home') ? '' : curDay });
+      }
+    });
+    if(seq.length !== PLACES.length) return; // safety: only whole-list reorder
+    const newPlaces = seq.map(s => { const p = PLACES[s.idx]; if(s.day) p.day = s.day; else delete p.day; return p; });
+    const newMarkers = seq.map(s => markers[s.idx]);
+    PLACES.length = 0; PLACES.push(...newPlaces);
+    markers.length = 0; markers.push(...newMarkers);
+    DEFAULT_HOME = computeDefaultHome();
+    markers.forEach((m, i)=>{ if(m.el) m.el.textContent = i + 1; });
+    buildList();
+    refreshHomeMarker();
+    persistOrder();
+  }
+
+  async function persistOrder(){
+    if(!APPS_SCRIPT_URL) return;
+    const order = PLACES.map(p => ({ k: p.slug || p.name, d: p.day || '' }));
+    try{
+      const r = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: new URLSearchParams({ action: 'reorder', order: JSON.stringify(order) })
+      });
+      const j = await r.json().catch(()=>({ ok:r.ok }));
+      if(!j.ok) throw new Error(j.error || `request failed (${r.status})`);
+    }catch(err){
+      alert('Could not save the new order: ' + err.message + '\nReloading to resync with the sheet.');
+      location.reload();
+    }
+  }
 })();
 
 // Load map immediately
