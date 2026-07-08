@@ -47,7 +47,6 @@
   .panel-head{padding:28px 30px 18px;flex:0 0 auto;}
   .panel-head h1{margin:0;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-.4px;
     display:flex;justify-content:space-between;align-items:baseline;gap:12px;}
-  .panel-head h1 span{font-weight:normal;}
   .day-select{font-family:var(--font);font-weight:700;color:var(--ink);border:none;
     background:#fff;cursor:pointer;font-size:15px;padding:6px 6px 6px 12px;border-radius:12px;max-width:100%;
     align-self:center;-webkit-appearance:menulist;appearance:auto;outline:none;}
@@ -349,15 +348,28 @@
 const HOME_KEY = "fillmore_ventura_home_base_v1";
 const TEMP_ORIGIN_KEY = "fillmore_ventura_temp_origin";
 const SHEET_ID = "1XOTG14SyH4OqPo2nw87Pef7KG7MGLMg5KEdQBf5c3io";
-// Spreadsheet tab to read — also the map title shown in the header and the
-// city tag sent to the Apps Script. Renaming the map = rename the tab in the
-// sheet and update this one line.
-const SHEET_NAME = "Fillmore & Ventura";
-document.title = SHEET_NAME;
-document.querySelectorAll('.mapTitle').forEach(el => { el.textContent = SHEET_NAME; });
+// Spreadsheet tab to read, addressed by its permanent gid (the number after
+// #gid= in the sheet's URL) so the tab can be renamed freely in Google
+// Sheets. SHEET_NAME is only the fallback title shown until the Apps Script
+// reports the live tab name.
+const SHEET_GID = "1113682763";
+const SHEET_NAME = "Fillmore";
+function setMapTitle(name){
+  document.title = name;
+  document.querySelectorAll('.mapTitle').forEach(el => { el.textContent = name; });
+}
+setMapTitle(SHEET_NAME);
 // Apps Script web app that appends + bakes new rows (see apps-script/Code.gs).
 // Leave empty to hide the add button.
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwTKS8CcQIRgFxj4IsqSdjdCLN70OdR3H-mGZEkbBeq4Bxd6D8GmD3v-LMBDmDaWG4/exec";
+
+// Show the live tab name as the map title (the gviz feed can't report it).
+if(APPS_SCRIPT_URL){
+  fetch(`${APPS_SCRIPT_URL}?gid=${SHEET_GID}`)
+    .then(r => r.json())
+    .then(j => { if(j && j.ok && j.name) setMapTitle(j.name); })
+    .catch(()=>{});
+}
 
 // Snapshot used when the sheet is unreachable (baked 2026-07 from the sheet).
 const FALLBACK_PLACES = [
@@ -380,7 +392,7 @@ const PLACES = [];
 let DEFAULT_HOME = null;
 
 async function fetchSheetPlaces(){
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}&headers=1&cb=${Date.now()}`;
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}&headers=1&cb=${Date.now()}`;
   const r = await fetch(url, {signal: AbortSignal.timeout(6000)});
   if(!r.ok) throw new Error(`sheet http ${r.status}`);
   const t = await r.text();
@@ -1127,7 +1139,7 @@ window.addEventListener('resize', scheduleMapViewSync);
     statusEl.textContent = 'Adding to the sheet & fetching photos… (can take ~20s)';
     try{
       const body = new URLSearchParams({
-        city: SHEET_NAME,
+        gid: SHEET_GID, city: SHEET_NAME,
         name, category: catEl.value, type: typeEl.value.trim(), notes: notesEl.value.trim()
       });
       const r = await fetch(APPS_SCRIPT_URL, { method:'POST', body });
@@ -1241,7 +1253,7 @@ window.addEventListener('resize', scheduleMapViewSync);
     try{
       const r = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        body: new URLSearchParams({ action: 'reorder', city: SHEET_NAME, order: JSON.stringify(order) })
+        body: new URLSearchParams({ action: 'reorder', gid: SHEET_GID, city: SHEET_NAME, order: JSON.stringify(order) })
       });
       const j = await r.json().catch(()=>({ ok:r.ok }));
       if(!j.ok) throw new Error(j.error || `request failed (${r.status})`);

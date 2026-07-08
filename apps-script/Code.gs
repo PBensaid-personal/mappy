@@ -1,6 +1,7 @@
 /**
- * Mappy bake script — bound to the "Mappy Rome" spreadsheet (one tab per city:
- * Rome, Chicago, …).
+ * Mappy bake script — bound to the "Mappy" spreadsheet (one tab per city:
+ * Rome, Chicago, …). The binding is by document, not by name, so renaming
+ * the spreadsheet is always safe.
  *
  * What it does:
  *  - doPost: each map page's "＋ Add place" form posts here with city=<tab> →
@@ -22,18 +23,22 @@
  *     in rome.html / chicago.html.
  *
  * Adding a city later: add its tab (copy the Rome header row), add an entry
- * to CITIES below, paste the updated file here, then Deploy → Manage
- * deployments → ✎ → Version: New version (the /exec URL stays the same).
+ * to CITIES below keyed by the tab's gid (visible in the sheet URL after
+ * #gid= when the tab is open), paste the updated file here, then Deploy →
+ * Manage deployments → ✎ → Version: New version (the /exec URL stays the
+ * same). Tabs can be renamed at any time — pages address tabs by gid and
+ * show the live tab name as the map title (served by doGet).
  */
 
-// One tab per city in this spreadsheet; each map page posts city=<name>.
-// Requests without a city keep working against Rome (older rome.html).
+// One tab per city in this spreadsheet; each map page sends gid=<tab id>.
+// Keyed by gid (shown in the sheet's URL as #gid=…) so tabs can be renamed
+// freely — the map header follows the tab name via doGet below.
 const CITIES = {
-  Rome:    { dir: 'photos/rome',    querySuffix: ', Rome, Italy' },
-  Chicago: { dir: 'photos/chicago', querySuffix: ', Chicago, IL' },
-  'Fillmore & Ventura': { dir: 'photos/fillmore-ventura', querySuffix: ', Ventura County, CA' }
+  '75628878':   { dir: 'photos/rome',             querySuffix: ', Rome, Italy' },
+  '34597013':   { dir: 'photos/chicago',          querySuffix: ', Chicago, IL' },
+  '1113682763': { dir: 'photos/fillmore-ventura', querySuffix: ', Ventura County, CA' }
 };
-const DEFAULT_CITY = 'Rome';
+const DEFAULT_GID = '75628878'; // Rome — for legacy requests with no gid/city
 const REPO = 'PBensaid-personal/mappy';
 const BRANCH = 'main';
 
@@ -48,6 +53,22 @@ function onOpen(){
     .addToUi();
 }
 
+// Pages fetch this to show the live tab name in the header (the public gviz
+// feed the app reads data from cannot report tab names).
+function doGet(e){
+  const out = { ok:false };
+  try{
+    const rs = resolveSheet((e && e.parameter) || {});
+    out.ok = true;
+    out.gid = String(rs.sh.getSheetId());
+    out.name = rs.sh.getName();
+  }catch(err){
+    out.error = String(err);
+  }
+  return ContentService.createTextOutput(JSON.stringify(out))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 function doPost(e){
   const p = (e && e.parameter) || {};
   if(p.action === 'reorder') return handleReorder(p);
@@ -55,16 +76,16 @@ function doPost(e){
   const lock = LockService.getScriptLock();
   lock.tryLock(30000);
   try{
-    const city = cityFor(p);
+    const rs = resolveSheet(p);
     const name = String(p.name || '').trim();
     if(!name) throw new Error('name is required');
-    const sh = sheet(city);
+    const sh = rs.sh;
     sh.appendRow([name, p.category || '', p.type || '', p.notes || '',
                   '', '', '', '', '', '', '', '', '', '']);
     out.ok = true;
     out.row = sh.getLastRow();
     try{
-      out.baked = bakeRow(sh, out.row, city);
+      out.baked = bakeRow(sh, out.row, rs.cfg);
     }catch(bakeErr){
       out.baked = false;
       out.bakeError = String(bakeErr);
@@ -88,7 +109,7 @@ function handleReorder(p){
   try{
     const order = JSON.parse(p.order || '[]');
     if(!Array.isArray(order) || !order.length) throw new Error('empty order');
-    const sh = sheet(cityFor(p));
+    const sh = resolveSheet(p).sh;
     const last = sh.getLastRow();
     if(last < 2) throw new Error('no rows');
     const width = sh.getLastColumn();
@@ -125,9 +146,10 @@ function handleReorder(p){
 // Bakes the tab currently open in the sheet UI — switch to a city tab first.
 function bakeAll(){
   const sh = SpreadsheetApp.getActiveSheet();
-  const city = sh.getName();
-  if(!CITIES[city]){
-    SpreadsheetApp.getUi().alert('No city config for tab "' + city + '" — add it to CITIES in Code.gs.');
+  const cfg = CITIES[String(sh.getSheetId())];
+  if(!cfg){
+    SpreadsheetApp.getUi().alert('No city config for tab "' + sh.getName() +
+      '" (gid ' + sh.getSheetId() + ') — add it to CITIES in Code.gs.');
     return;
   }
   const last = sh.getLastRow();
@@ -136,34 +158,37 @@ function bakeAll(){
     const hasName = String(sh.getRange(r, COL_NAME).getValue()).trim() !== '';
     const hasPid = String(sh.getRange(r, COL_PID).getValue()).trim() !== '';
     if(!hasName || hasPid) continue;
-    try{ if(bakeRow(sh, r, city)) baked++; }
+    try{ if(bakeRow(sh, r, cfg)) baked++; }
     catch(err){ failed.push(sh.getRange(r, COL_NAME).getValue() + ': ' + err); }
   }
   SpreadsheetApp.getUi().alert(
-    'Baked ' + baked + ' ' + city + ' row(s).' + (failed.length ? '\n\nFailed:\n' + failed.join('\n') : ''));
+    'Baked ' + baked + ' ' + sh.getName() + ' row(s).' + (failed.length ? '\n\nFailed:\n' + failed.join('\n') : ''));
 }
 
-function cityFor(p){
-  const city = String((p && p.city) || DEFAULT_CITY);
-  if(!CITIES[city]) throw new Error('unknown city: ' + city);
-  return city;
-}
-
-function sheet(city){
-  const sh = SpreadsheetApp.getActive().getSheetByName(city);
-  if(!sh) throw new Error('no sheet tab named ' + city);
-  return sh;
+// gid first (rename-proof), then legacy city tab name, then the default tab.
+function resolveSheet(p){
+  const ss = SpreadsheetApp.getActive();
+  const byGid = function(gid){
+    return ss.getSheets().filter(function(s){ return String(s.getSheetId()) === String(gid); })[0];
+  };
+  let sh = null;
+  if(p && p.gid != null && String(p.gid) !== '') sh = byGid(p.gid);
+  if(!sh && p && p.city) sh = ss.getSheetByName(String(p.city));
+  if(!sh) sh = byGid(DEFAULT_GID);
+  if(!sh) throw new Error('sheet tab not found');
+  const cfg = CITIES[String(sh.getSheetId())];
+  if(!cfg) throw new Error('no city config for tab "' + sh.getName() + '" (gid ' + sh.getSheetId() + ')');
+  return { sh: sh, cfg: cfg };
 }
 
 function props(){
   return PropertiesService.getScriptProperties();
 }
 
-function bakeRow(sh, r, city){
+function bakeRow(sh, r, cfg){
   const KEY = props().getProperty('PLACES_KEY');
   const TOKEN = props().getProperty('GITHUB_TOKEN');
   if(!KEY || !TOKEN) throw new Error('Set PLACES_KEY and GITHUB_TOKEN in Script Properties');
-  const cfg = CITIES[city || DEFAULT_CITY];
 
   const name = String(sh.getRange(r, COL_NAME).getValue()).trim();
 
