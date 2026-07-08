@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Fillmore &amp; Ventura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+
+<script>
+  const GOOGLE_MAPS_API_KEY = "AIzaSyA-g1XHWOfvmay2B3ZliOmXH5UcCPmKXR0";
+</script>
+
+<style>
+  :root{
+    --ink:#1a1a1a; --muted:#6b7280; --line:#e8e8e8;
+    --panel-bg:#ffffff; --chip-bg:#ffffff; --soft:#f4f4f5;
+    --accent:#111111; --star:#f5a623; --radius:22px;
+    --shadow:0 10px 40px rgba(0,0,0,.12);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;}
+  body{font-family:var(--font);color:var(--ink);background:#e4eef3;overflow:hidden;}
+  #map{position:absolute;inset:0;z-index:1;background:#e4eef3;}
+
+  /* numbered chips as advanced markers */
+  .num-chip{
+    background:var(--accent);border-radius:50%;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+    font-weight:700;font-size:14px;color:#fff;
+    width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+    border:2px solid #fff;
+    transition:transform .12s ease, box-shadow .12s ease;cursor:pointer;
+    transform:translateY(-50%);
+  }
+  .num-chip:hover{transform:translateY(-50%) scale(1.14);box-shadow:0 6px 16px rgba(0,0,0,.32);z-index:9;}
+  .num-chip.active{background:#fff;color:var(--accent);box-shadow:0 6px 18px rgba(0,0,0,.4);transform:translateY(-50%) scale(1.14);}
+  .num-chip.home{background:#f5a623;border-color:#fff;}
+  .num-chip.home.active{background:#fff;color:#f5a623;}
+
+  /* panel */
+  .panel{position:absolute;top:22px;right:22px;bottom:22px;width:430px;
+    background:var(--panel-bg);border-radius:var(--radius);box-shadow:var(--shadow);
+    z-index:1000;display:flex;flex-direction:column;overflow:hidden;}
+  .panel-head{padding:28px 30px 18px;flex:0 0 auto;}
+  .panel-head h1{margin:0;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-.4px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:12px;}
+  .panel-head h1 span{font-weight:normal;}
+  .day-select{font-family:var(--font);font-weight:700;color:var(--ink);border:none;
+    background:#fff;cursor:pointer;font-size:15px;padding:6px 6px 6px 12px;border-radius:12px;max-width:100%;
+    align-self:center;-webkit-appearance:menulist;appearance:auto;outline:none;}
+  .day-select:focus,.day-select:focus-visible{outline:none;}
+  .sheet-title-sub .day-select{float:right;font-size:15px;}
+  .panel-head p{margin:16px 0 0;color:#4b5563;font-size:16px;line-height:1.45;}
+  .filters{display:flex;gap:8px;margin:14px 0 0;flex-wrap:wrap;}
+  .filter-chip{border:1.5px solid #e2e2e2;background:#fff;border-radius:20px;
+    padding:7px 14px;font-size:13.5px;font-weight:500;cursor:pointer;color:#4b5563;
+    transition:background .14s,border-color .14s,color .14s;}
+  .filter-chip:hover{background:var(--soft);}
+  .filter-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .cat-tag{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+    padding:2px 8px;border-radius:6px;background:#f3f4f6;color:#6b7280;}
+  .cat-tag.food{background:#fef3c7;color:#92400e;}
+  .cat-tag.fun{background:#ede9fe;color:#5b21b6;}
+  .cat-tag.destination{background:#dbeafe;color:#1e40af;}
+  .list{flex:1 1 auto;overflow-y:auto;padding:6px 18px 18px;-webkit-overflow-scrolling:touch;}
+  .list-item{display:flex;gap:14px;align-items:center;padding:16px;border-radius:18px;
+    cursor:pointer;transition:background .14s ease;margin-bottom:6px;
+    user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+  .list-item:hover,.list-item.active{background:var(--soft);}
+  .list-item.unbaked{opacity:.6;}
+  .list.reorderable .list-item:not(.home){cursor:grab;}
+  .list-item.drag-src{opacity:.55;background:var(--soft);box-shadow:0 8px 22px rgba(0,0,0,.18);
+    cursor:grabbing;touch-action:none;}
+  .day-divider{display:flex;align-items:center;gap:12px;padding:16px 16px 6px;user-select:none;}
+  .day-divider span{font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.09em;
+    color:#9ca3af;white-space:nowrap;flex:0 0 auto;}
+  .day-divider::after{content:"";flex:1 1 auto;height:1px;background:var(--line);}
+  .li-num{flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:var(--accent);
+    color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .list-item.home .li-num{background:#f5a623;}
+  .thumb{position:relative;width:80px;height:80px;flex:0 0 80px;border-radius:14px;background:#ededed;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .thumb .li-num{position:absolute;top:0;left:0;z-index:2;box-shadow:0 1px 5px rgba(0,0,0,.4);}
+  .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+  .thumb svg{width:30px;height:30px;opacity:.4;color:#fff;position:relative;z-index:0;}
+  .li-body{min-width:0;flex:1;}
+  .li-title{display:flex;align-items:center;gap:10px;min-width:0;}
+  .li-title h3{margin:0;font-size:18px;font-weight:700;letter-spacing:-.2px;min-width:0;}
+  .li-meta{margin:5px 0 0;font-size:15px;color:#4b5563;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .li-meta .star{color:var(--star);}
+  .li-desc{margin:6px 0 0;font-size:14.5px;color:#6b7280;line-height:1.35;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+  /* detail card */
+  .detail{position:absolute;top:22px;right:22px;bottom:22px;width:540px;max-width:calc(100vw - 44px);
+    background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);z-index:1200;
+    overflow:hidden;display:none;flex-direction:column;}
+  .detail.show{display:flex;}
+  .detail-photo{position:relative;flex:0 0 auto;height:300px;background:#ddd;}
+  .detail-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;}
+  .detail-photo .dots{position:absolute;left:0;right:0;bottom:14px;z-index:3;display:flex;gap:7px;justify-content:center;}
+  .detail-photo .dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.55);cursor:pointer;transition:background .14s, transform .14s;}
+  .detail-photo .dots span:hover{transform:scale(1.25);}
+  .detail-photo .dots span.on{background:#fff;}
+  .gal-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:3;
+    width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;
+    background:rgba(0,0,0,.42);color:#fff;display:none;align-items:center;justify-content:center;
+    transition:background .14s;}
+  .gal-arrow:hover{background:rgba(0,0,0,.62);}
+  .gal-prev{left:14px;} .gal-next{right:14px;}
+  .detail-photo.multi .gal-arrow{display:flex;}
+  .close-btn{position:absolute;top:16px;right:16px;z-index:3;width:36px;height:36px;border-radius:50%;
+    background:rgba(255,255,255,.92);border:none;cursor:pointer;display:flex;align-items:center;
+    justify-content:center;font-size:18px;color:#333;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+  .detail-body{flex:1 1 auto;min-height:0;padding:24px 28px 26px;overflow-y:auto;}
+  .detail-title{display:flex;align-items:center;gap:12px;}
+  .detail-title .li-num{flex:0 0 30px;width:30px;height:30px;font-size:15px;}
+  .detail-body h2{margin:0;font-size:27px;font-weight:800;letter-spacing:-.3px;}
+  .detail-sub{margin:10px 0 0;font-size:16px;color:#4b5563;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .detail-sub .star{color:var(--star);}
+  .actions{display:flex;align-items:center;gap:12px;margin:20px 0 0;flex-wrap:wrap;}
+  .actions .btn-primary{flex:1 1 auto;min-width:0;}
+  .btn-primary{background:var(--accent);color:#fff;border:none;padding:13px 26px;border-radius:30px;
+    font-size:16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+    text-decoration:none;transition:opacity .14s ease;}
+  .btn-primary:hover{opacity:.85;}
+  .btn-round{width:50px;height:50px;border-radius:50%;border:1.5px solid #e2e2e2;background:#fff;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;color:#333;text-decoration:none;
+    transition:background .14s ease;}
+  .btn-round:hover{background:var(--soft);}
+  .btn-round svg{width:20px;height:20px;}
+  .notes{margin:20px 0 0;background:var(--soft);border-radius:16px;padding:18px 20px;}
+  .notes p{margin:0;font-size:17px;line-height:1.5;color:#1f2937;}
+  .detail-extra{margin:16px 0 0;display:flex;flex-direction:column;gap:12px;}
+  .detail-address{font-size:16px;color:#4b5563;line-height:1.45;}
+  .detail-wa{display:inline-flex;align-items:center;gap:10px;font-size:16px;color:#128C7E;text-decoration:none;font-weight:500;}
+  .detail-wa:hover{text-decoration:underline;}
+  .detail-wa svg{flex:0 0 20px;width:20px;height:20px;}
+  .contact{margin:18px 0 0;display:flex;flex-direction:column;gap:12px;}
+  .contact a{display:flex;align-items:center;gap:12px;font-size:16px;color:#374151;text-decoration:none;word-break:break-all;}
+  .contact svg{width:18px;height:18px;flex:0 0 18px;color:#6b7280;}
+  .detail-nav{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+    padding:14px 22px;border-top:1px solid var(--line);}
+  .nav-arrow{width:44px;height:44px;border-radius:50%;border:1.5px solid #e2e2e2;background:#fff;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;color:#333;transition:background .14s ease;}
+  .nav-arrow:hover{background:var(--soft);}
+  .nav-arrow:disabled{opacity:.35;cursor:default;}
+  .nav-count{font-size:17px;color:#4b5563;font-weight:500;}
+
+  /* add-place */
+  .add-chip{border:1.5px solid var(--accent);background:var(--accent);color:#fff;border-radius:50%;
+    width:32px;height:32px;padding:0;font-size:22px;line-height:1;font-weight:400;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;transition:opacity .14s;flex:0 0 auto;}
+  .add-chip:hover{opacity:.8;}
+  .add-overlay{position:fixed;inset:0;z-index:3000;background:rgba(15,23,32,.45);display:none;
+    align-items:center;justify-content:center;padding:20px;}
+  .add-overlay.show{display:flex;}
+  .add-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);width:100%;max-width:440px;
+    padding:26px 28px;display:flex;flex-direction:column;gap:14px;max-height:90vh;overflow-y:auto;}
+  .add-card h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.3px;}
+  .add-card label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.04em;color:#6b7280;}
+  .add-card input,.add-card select,.add-card textarea{font-family:var(--font);font-size:16px;color:var(--ink);
+    border:1.5px solid #e2e2e2;border-radius:12px;padding:11px 14px;outline:none;background:#fff;resize:vertical;}
+  .add-card input:focus,.add-card select:focus,.add-card textarea:focus{border-color:var(--accent);}
+  .add-actions{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:4px;}
+  .add-actions .btn-cancel{border:1.5px solid #e2e2e2;background:#fff;border-radius:30px;padding:12px 22px;
+    font-size:15px;font-weight:500;cursor:pointer;color:#4b5563;}
+  .add-actions .btn-cancel:hover{background:var(--soft);}
+  .add-status{margin:0;font-size:14.5px;color:#4b5563;min-height:20px;}
+  .add-status.err{color:#b91c1c;}
+
+  .keywarn{position:fixed;left:50%;top:22px;transform:translateX(-50%);z-index:2500;
+    background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:14px;
+    padding:12px 20px;font-size:14.5px;max-width:90vw;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.12);display:none;}
+  .keywarn.show{display:block;}
+  .keywarn code{background:rgba(0,0,0,.06);padding:1px 6px;border-radius:5px;font-size:13px;}
+
+  .sheet-handle{display:none;}
+  .sheet-title-main,.sheet-title-sub,.sheet-grabber{display:none;}
+
+  @media (max-width:760px){
+    :root{--sheet-h:72vh;--sheet-handle-h:64px;}
+    .panel{top:auto;left:0;right:0;bottom:0;width:100%;height:var(--sheet-h);border-radius:22px 22px 0 0;
+      box-shadow:0 -8px 30px rgba(0,0,0,.18);transition:height .28s ease;}
+    .panel.collapsed{height:var(--sheet-handle-h);min-height:var(--sheet-handle-h);}
+    .sheet-handle{display:flex;align-items:center;justify-content:space-between;gap:14px;
+      width:100%;min-height:var(--sheet-handle-h);flex:0 0 var(--sheet-handle-h);
+      padding:16px 24px 10px;cursor:grab;touch-action:none;
+      -webkit-user-select:none;user-select:none;}
+    .sheet-title-main,.sheet-title-sub,.sheet-grabber{display:block;}
+    .sheet-title-main{font-size:23px;font-weight:800;letter-spacing:-.4px;line-height:1.15;flex:1 1 0;min-width:0;}
+    .sheet-title-sub{font-size:23px;font-weight:400;letter-spacing:-.4px;line-height:1.15;flex:1 1 0;min-width:0;text-align:right;}
+    .sheet-grabber{width:42px;height:5px;border-radius:3px;background:#a1a1aa;flex:0 0 42px;}
+    .panel.collapsed .panel-head,
+    .panel.collapsed .list{display:none;}
+    .panel-head{padding:2px 24px 10px;}
+    .panel-head h1{display:none;}
+    .panel-head .filters{margin-top:6px;}
+    .panel-head p{font-size:14px;margin-top:10px;}
+    .list{padding:4px 12px 24px;}
+    .li-body h3{font-size:17px;}
+    .detail{top:auto;left:0;right:0;bottom:0;width:100%;max-width:100%;height:var(--sheet-h);border-radius:22px 22px 0 0;
+      box-shadow:0 -8px 30px rgba(0,0,0,.18);}
+    .detail-body{flex:1 1 auto;min-height:0;}
+    .detail-photo{height:230px;}
+    .detail-body{padding:20px 20px 22px;}
+    .detail-body h2{font-size:23px;}
+    .btn-primary{padding:13px 22px;flex:1;justify-content:center;}
+    .actions{gap:10px;}
+  }
+
+  /* ===== Landing / enter screen ===== */
+  #gate{
+    position:fixed;inset:0;z-index:5000;
+    background:
+      radial-gradient(1200px 600px at 78% 18%, rgba(70,196,180,.30), transparent 60%),
+      radial-gradient(900px 700px at 15% 90%, rgba(40,90,110,.45), transparent 65%),
+      linear-gradient(160deg,#16242e 0%, #15212c 45%, #101a22 100%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:30px;overflow:hidden;
+  }
+  #gate::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 1px, transparent 1px 220px);
+  }
+  .gate-inner{position:relative;z-index:1;max-width:760px;width:100%;
+    opacity:0;transform:translateY(14px);animation:gateIn .9s ease forwards .1s;}
+  @keyframes gateIn{to{opacity:1;transform:translateY(0);}}
+  .gate-kicker{font-family:'Jost',sans-serif;font-weight:500;
+    letter-spacing:.34em;text-transform:uppercase;font-size:15px;
+    color:#5fd2c2;margin:0 0 34px;}
+  .gate-title{font-family:'Cormorant Garamond',serif;color:#f4f1ea;
+    line-height:.94;margin:0;font-weight:500;}
+  .gate-title .l1{display:block;font-size:clamp(58px,11vw,128px);}
+  .gate-title .l2{display:block;font-style:italic;font-weight:400;
+    font-size:clamp(50px,9.5vw,112px);color:#aeb7bd;margin-top:2px;}
+  .gate-form{margin:46px auto 0;display:flex;justify-content:center;max-width:420px;width:100%;}
+  .gate-form button{
+    background:#5fd2c2;color:#10222a;border:none;border-radius:40px;
+    padding:16px 56px;font-family:'Jost',sans-serif;font-weight:500;
+    font-size:16px;letter-spacing:.12em;text-transform:uppercase;
+    cursor:pointer;transition:opacity .15s, transform .15s;}
+  .gate-form button:hover{opacity:.9;transform:translateY(-1px);}
+  body.locked{overflow:hidden;}
+  @media (max-width:760px){
+    .gate-kicker{font-size:12.5px;letter-spacing:.26em;margin-bottom:24px;}
+    .gate-form button{padding:15px 44px;}
+  }
+</style>
+</head>
+<body>
+
+
+
+<div id="map"></div>
+
+<div class="panel" id="panel">
+  <div class="sheet-handle" id="handle">
+    <span class="sheet-title-main">Fillmore &amp; Ventura</span>
+    <span class="sheet-grabber" aria-hidden="true"></span>
+    <span class="sheet-title-sub"><select class="day-select" id="dayFilterMobile" aria-label="Filter by day"></select></span>
+  </div>
+  <div class="panel-head">
+    <h1>Fillmore &amp; Ventura<select class="day-select" id="dayFilterDesktop" aria-label="Filter by day"></select></h1>
+    <div class="filters" id="filters">
+      <button class="filter-chip on" data-cat="all">All</button>
+      <button class="add-chip" id="addBtn" type="button" style="display:none" aria-label="Add place" title="Add place">+</button>
+    </div>
+  </div>
+  <div class="list" id="list"></div>
+</div>
+
+<div class="detail" id="detail">
+  <div class="detail-photo" id="detailPhoto">
+    <img id="detailImg" alt="">
+    <button class="gal-arrow gal-prev" id="galPrev" onclick="photoStep(-1)" aria-label="Previous photo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="gal-arrow gal-next" id="galNext" onclick="photoStep(1)" aria-label="Next photo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <button class="close-btn" onclick="closeDetail()">&times;</button>
+    <div class="dots" id="detailDots"></div>
+  </div>
+  <div class="detail-body">
+    <div class="detail-title"><span class="li-num" id="dNum"></span><h2 id="dName"></h2></div>
+    <div class="detail-sub" id="dSub"></div>
+    <div class="actions" id="dActions"></div>
+    <div class="notes" id="dNotes" style="display:none;">
+      <p id="dNotesText"></p>
+    </div>
+    <div class="detail-extra" id="dExtra" style="display:none;"></div>
+    <div class="contact" id="dContact"></div>
+  </div>
+  <div class="detail-nav">
+    <button class="nav-arrow" id="navPrev" type="button" aria-label="Previous">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="nav-count" id="navCount"></span>
+    <button class="nav-arrow" id="navNext" type="button" aria-label="Next">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="add-overlay" id="addOverlay">
+  <div class="add-card">
+    <h2>Add a place</h2>
+    <label>Name
+      <input id="afName" autocomplete="off" placeholder="e.g. Sunburst Railbikes">
+    </label>
+    <label>Category
+      <select id="afCat">
+        <option>Food</option>
+        <option>Fun</option>
+        <option>Destination</option>
+      </select>
+    </label>
+    <label>Type
+      <input id="afType" list="afTypeList" autocomplete="off" placeholder="Restaurant, Bar, Museum…">
+      <datalist id="afTypeList">
+        <option>Restaurant</option><option>Café</option><option>Market</option><option>Farm Store</option>
+        <option>Bar</option><option>Brewery</option><option>Wine Bar</option><option>Experience</option>
+        <option>Museum</option><option>Landmark</option><option>Tour</option><option>Hotel</option>
+        <option>Park</option><option>Trail</option><option>Beach</option><option>Shopping</option><option>Record Store</option>
+      </datalist>
+    </label>
+    <label>Notes
+      <textarea id="afNotes" rows="3" placeholder="Why it's on the list…"></textarea>
+    </label>
+    <div class="add-actions">
+      <button class="btn-cancel" id="afCancel" type="button">Cancel</button>
+      <button class="btn-primary" id="afSubmit" type="button">Add to map</button>
+    </div>
+    <p class="add-status" id="afStatus"></p>
+  </div>
+</div>
+
+<script>
+const HOME_KEY = "fillmore_ventura_home_base_v1";
+const TEMP_ORIGIN_KEY = "fillmore_ventura_temp_origin";
+const SHEET_ID = "1XOTG14SyH4OqPo2nw87Pef7KG7MGLMg5KEdQBf5c3io";
+// Apps Script web app that appends + bakes new rows (see apps-script/Code.gs).
+// Leave empty to hide the add button.
+// After updating apps-script/Code.gs (multi-city) and deploying a new version,
+// paste the /exec URL here to enable the ＋ button and drag-reorder saves:
+const APPS_SCRIPT_URL = "";
+
+// Snapshot used when the sheet is unreachable (baked 2026-07 from the sheet).
+const FALLBACK_PLACES = [
+  {name:"Ay! Chihuahua", pid:"ChIJM0bisULM6YARmL-9wSciqPU", rating:4.5, count:729, lat:34.395078399999996, lng:-118.928835, type:"Restaurant", category:"Food", day:"1", address:"1145 Ventura St, Fillmore, CA 93015, USA", phone:"+1 805-524-4642", website:"https://aychihuahua.shop/", thumb:"photos/fillmore-ventura/ay-chihuahua-thumb.jpg", photos:["photos/fillmore-ventura/ay-chihuahua-1.jpg","photos/fillmore-ventura/ay-chihuahua-2.jpg","photos/fillmore-ventura/ay-chihuahua-3.jpg"], notes:"The gold standard Mexican joint in a town that knows its Mexican food — Galvez family-run for 30+ years, photos of Zapata and Pancho Villa on the walls. Legendary breakfast burritos, sizzling tacos, menudo, and a self-serve salsa bar that burns a path of destruction down your throat (in a good way)."},
+  {name:"Fillmore Historical Museum", pid:"ChIJJ2C3jk3M6YARhKD_DYwKKBo", rating:4.6, count:62, lat:34.399425, lng:-118.9100667, type:"Museum", category:"Destination", day:"1", address:"350 Main St, Fillmore, CA 93015, USA", phone:"+1 805-524-0948", website:"http://www.fillmorehistoricalmuseum.org/", thumb:"photos/fillmore-ventura/fillmore-historical-museum-thumb.jpg", photos:["photos/fillmore-ventura/fillmore-historical-museum-1.jpg","photos/fillmore-ventura/fillmore-historical-museum-2.jpg","photos/fillmore-ventura/fillmore-historical-museum-3.jpg"], notes:"Three restored historic buildings — the 1887 Fillmore Depot, 1905 Hinckley House and 1919 Rancho Sespe Bunkhouse. The treasure: a wardrobe-sized 1902 Regina music box from Fillmore's Star Theater playing manhole-cover-sized metal discs (ask a docent for a live performance; CD of all 12 songs $10 in the gift shop). Plus a Ford Model A pickup that ran the 2002 Great Race."},
+  {name:"Fillmore Fish Hatchery", pid:"ChIJY9jV4grN6YAR2bK-NT4qRQI", rating:4.7, count:281, lat:34.3928325, lng:-118.884333, type:"Fish Hatchery", category:"Fun", day:"1", address:"612 E Telegraph Rd, Fillmore, CA 93015, USA", phone:"+1 805-524-0962", website:"https://wildlife.ca.gov/Fishing/Hatcheries/Fillmore", thumb:"photos/fillmore-ventura/fillmore-fish-hatchery-thumb.jpg", photos:["photos/fillmore-ventura/fillmore-fish-hatchery-1.jpg","photos/fillmore-ventura/fillmore-fish-hatchery-2.jpg","photos/fillmore-ventura/fillmore-fish-hatchery-3.jpg"], notes:"Half a million rainbow trout in four 1,000-foot raceways, run by CA Fish & Wildlife — walk through the creaky gate ('Come In, We're Open') and toss in pellets (two handfuls per visitor) to trigger a thrashing feeding frenzy. Free, oddly calming, great for kids. Sheltered 271 endangered steelhead rescued from Topanga Creek during the Palisades Fire."},
+  {name:"Francisco's Fruit Stand", pid:"ChIJAcfxlKDN6YARTL45CKqjSnU", rating:4.6, count:340, lat:34.3951367, lng:-118.88090579999998, type:"Market", category:"Food", day:"1", address:"768 E Telegraph Rd, Fillmore, CA 93015, USA", phone:"+1 805-524-4616", website:"http://franciscosfruits.com/", thumb:"photos/fillmore-ventura/francisco-s-fruit-stand-thumb.jpg", photos:["photos/fillmore-ventura/francisco-s-fruit-stand-1.jpg","photos/fillmore-ventura/francisco-s-fruit-stand-2.jpg","photos/fillmore-ventura/francisco-s-fruit-stand-3.jpg"], notes:"Family fruit stand literally surrounded by its own orchards — field to checkout measured in feet. Oranges, lemons, mandarins, avocados, persimmons, pomegranates straight from the family's ~200 acres, no middleman. In season (March–May), grab the knobby-necked tangelos — so juicy you might need a straw and a bib."},
+  {name:"Bennett's Honey Farm", pid:"ChIJ18avX-LS6YARoI9TxcXaIcE", rating:4.8, count:482, lat:34.405271299999995, lng:-118.81541179999999, type:"Farm Store", category:"Food", day:"1", address:"3176 Honey Ln, Fillmore, CA 93015, USA", phone:"+1 805-521-1375", website:"http://www.bennetthoney.com/", thumb:"photos/fillmore-ventura/bennett-s-honey-farm-thumb.jpg", photos:["photos/fillmore-ventura/bennett-s-honey-farm-1.jpg","photos/fillmore-ventura/bennett-s-honey-farm-2.jpg","photos/fillmore-ventura/bennett-s-honey-farm-3.jpg"], notes:"Award-winning honey bottler on Honey Lane off the 126, started in 1978 by a JPL engineer after a swarm landed in his backyard. Tasting room with self-serve spigots: light sage honey that never granulates, dark tangy avocado ('the Guinness stout of honey'), plus pink grapefruit and matcha blends, beeswax candles and lotions. Gravity-strained raw honey, never heated."},
+  {name:"Rancho Camulos", pid:"ChIJ9S5fp77U6YAR6lTpqmdngys", rating:4.6, count:101, lat:34.405189500000006, lng:-118.7569236, type:"Landmark", category:"Destination", day:"1", address:"5164 E Telegraph Rd, Piru, CA 93040, USA", phone:"+1 805-521-1501", website:"http://www.ranchocamulos.org/", thumb:"photos/fillmore-ventura/rancho-camulos-thumb.jpg", photos:["photos/fillmore-ventura/rancho-camulos-1.jpg","photos/fillmore-ventura/rancho-camulos-2.jpg","photos/fillmore-ventura/rancho-camulos-3.jpg"], notes:"The real-life inspiration for the rancho in the 1884 novel 'Ramona' and Ventura County's only National Historic Landmark, established by the Del Valle family in 1853. Docent-led tours Sundays only from 1 p.m., $10 cash, a thorough three hours — Ramona's (never actually occupied) bedroom, the chapel, and a screening of D.W. Griffith's 1910 film shot largely on site."},
+  {name:"El Pescador", pid:"ChIJI42qiWjM6YARS8i9TkhKdkA", rating:4.5, count:3373, lat:34.394525, lng:-118.93272629999998, type:"Restaurant", category:"Food", day:"1", address:"1305 W Ventura St, Fillmore, CA 93015, USA", phone:"+1 805-524-9999", website:"http://elpescadorinfillmore.com/", thumb:"photos/fillmore-ventura/el-pescador-thumb.jpg", photos:["photos/fillmore-ventura/el-pescador-1.jpg","photos/fillmore-ventura/el-pescador-2.jpg","photos/fillmore-ventura/el-pescador-3.jpg"], notes:"Red-roofed mariscos landmark rising off Highway 126, the crown jewel of the Ortiz brothers' chain — grand hacienda dining room, wrought-iron chandeliers, house-brand tequila, and fresh tortillas puffing on a giant rotating comal. Order the Molcajete Jefe: chicken, chorizo, steak, shrimp, crab legs and a lobster tail piled in a viciously hissing stone mortar."},
+  {name:"Sunburst Railbikes", pid:"ChIJVREryfW16YARdh00NSVvApk", rating:4.5, count:266, lat:34.3557389, lng:-119.0611132, type:"Experience", category:"Destination", day:"2", address:"200 N 10th St, Santa Paula, CA 93060, USA", phone:"+1 805-844-5075", website:"https://www.sunbursttrain.com/", thumb:"photos/fillmore-ventura/sunburst-railbikes-thumb.jpg", photos:["photos/fillmore-ventura/sunburst-railbikes-1.jpg","photos/fillmore-ventura/sunburst-railbikes-2.jpg","photos/fillmore-ventura/sunburst-railbikes-3.jpg"], notes:"Pedal (or thumb-throttle) an electric railbike through miles of citrus and avocado groves on old Southern Pacific track — the only railbike ride within 70 miles of L.A., opened 2023. Departs Santa Paula Depot; 5 miles out, picnic lunch at the turnaround (pre-ordered box ~$30 or bring your own), then a stop at Prancer's Farm to pet animals. From $249 for two before fees (check Groupon for discounts); rides Thu–Sun twice daily, Wed once. Farmland = no shade — bring sunscreen."},
+  {name:"Agriculture Museum", pid:"ChIJM_as65u16YARexy9Ji_65QU", rating:4.7, count:194, lat:34.355691400000005, lng:-119.0625193, type:"Museum", category:"Destination", day:"2", address:"926 Railroad Ave, Santa Paula, CA 93060, USA", phone:"+1 805-525-3100", website:"https://venturamuseum.org/visit-agriculture-museum/", thumb:"photos/fillmore-ventura/agriculture-museum-thumb.jpg", photos:["photos/fillmore-ventura/agriculture-museum-1.jpg","photos/fillmore-ventura/agriculture-museum-2.jpg","photos/fillmore-ventura/agriculture-museum-3.jpg"], notes:"Free Museum of Ventura County outpost in an 1888 building steps from the Santa Paula Depot: antique tractors, a living beehive and 'The Thresher,' a gigantic rusting hulk of gears and pulleys. Don't miss Diego Huerta's 40 portraits of Mexican indigenous communities of Ventura County — Mixteco, Zapotec, Purépecha, Maya, Nahua, Otomí — in traditional dress."},
+  {name:"Rabalais' Bistro", pid:"ChIJZ4cNI5y16YARMUdVWRx9aoc", rating:4.7, count:1149, lat:34.3533176, lng:-119.0629387, type:"Restaurant", category:"Food", day:"2", address:"861 E Main St, Santa Paula, CA 93060, USA", phone:"+1 805-525-2109", website:"http://rabalaisbistro.com/", thumb:"photos/fillmore-ventura/rabalais-bistro-thumb.jpg", photos:["photos/fillmore-ventura/rabalais-bistro-1.jpg","photos/fillmore-ventura/rabalais-bistro-2.jpg","photos/fillmore-ventura/rabalais-bistro-3.jpg"], notes:"Downtown Santa Paula's portal to the French Quarter: fresh beignets and chicory coffee for breakfast, fried-shrimp po boys, gumbo, and Fried Chicken Tuesday with a buttermilk biscuit from the in-house bakery. A 2011 tribute to owner Tracy Lippert's Louisiana grandmother; Harrison Ford is a real-life regular. Mardi Gras party every Fat Tuesday."},
+  {name:"Glen Tavern Inn", pid:"ChIJLcUTC5y16YARVvde2ANMkJg", rating:4.3, count:490, lat:34.3547096, lng:-119.06204220000001, type:"Hotel", category:"Destination", day:"2", address:"134 N Mill St, Santa Paula, CA 93060, USA", phone:"+1 805-933-5550", website:"https://www.officialglentavern.com/", thumb:"photos/fillmore-ventura/glen-tavern-inn-thumb.jpg", photos:["photos/fillmore-ventura/glen-tavern-inn-1.jpg","photos/fillmore-ventura/glen-tavern-inn-2.jpg","photos/fillmore-ventura/glen-tavern-inn-3.jpg"], notes:"1911 hotel on the National Register with full Haunted Mansion vibes — 'Ghost Adventures' and 'The Dead Files' both investigated it, Room 307 is the famous one (a historian says the ghosts were invented as 1980s marketing). Rates rival the Best Western in Fillmore, so it's the characterful overnight pick for the valley."},
+  {name:"Prospect Coffee Roasters", pid:"ChIJ8dvQkeSs6YARwSQ3Oigrd7k", rating:4.5, count:510, lat:34.2797449, lng:-119.2853169, type:"Café", category:"Food", day:"3", address:"92 S Laurel St, Ventura, CA 93001, USA", website:"https://www.prospectcoffee.com/", thumb:"photos/fillmore-ventura/prospect-coffee-roasters-thumb.jpg", photos:["photos/fillmore-ventura/prospect-coffee-roasters-1.jpg","photos/fillmore-ventura/prospect-coffee-roasters-2.jpg","photos/fillmore-ventura/prospect-coffee-roasters-3.jpg"], notes:"Ventura's hometown roaster — espresso and pour-overs from beans roasted in-house. Morning fuel for the Ventura day."},
+  {name:"Butter & Fold", pid:"ChIJnZ5LZxOt6YARYHGzRgKsrLI", rating:4.2, count:169, lat:34.2740152, lng:-119.26937350000001, type:"Café", category:"Food", day:"3", address:"2126 E Thompson Blvd, Ventura, CA 93001, USA", phone:"+1 805-926-5561", website:"https://instagram.com/butterandfold", thumb:"photos/fillmore-ventura/butter-fold-thumb.jpg", photos:["photos/fillmore-ventura/butter-fold-1.jpg","photos/fillmore-ventura/butter-fold-2.jpg","photos/fillmore-ventura/butter-fold-3.jpg"], notes:"Croissant-forward Ventura bakery — buttery laminated pastries and breakfast bites before browsing downtown."},
+  {name:"Jockamo Records", pid:"ChIJj3iw1u-s6YARm5Ij0nabZfk", rating:4.6, count:76, lat:34.2794451, lng:-119.29269020000001, type:"Record Store", category:"Fun", day:"3", address:"522 E Santa Clara St, Ventura, CA 93001, USA", phone:"+1 805-667-8178", website:"https://www.facebook.com/pages/Jockamo-Records/812747445411666", thumb:"photos/fillmore-ventura/jockamo-records-thumb.jpg", photos:["photos/fillmore-ventura/jockamo-records-1.jpg","photos/fillmore-ventura/jockamo-records-2.jpg","photos/fillmore-ventura/jockamo-records-3.jpg"], notes:"Crate-digging stop in Ventura — new and used vinyl."}
+];
+const PLACES = [];
+let DEFAULT_HOME = null;
+
+async function fetchSheetPlaces(){
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Fillmore%20%26%20Ventura&headers=1&cb=${Date.now()}`;
+  const r = await fetch(url, {signal: AbortSignal.timeout(6000)});
+  if(!r.ok) throw new Error(`sheet http ${r.status}`);
+  const t = await r.text();
+  const j = JSON.parse(t.substring(t.indexOf('{'), t.lastIndexOf('}')+1));
+  const labels = j.table.cols.map(c => (c.label||'').trim().toLowerCase());
+  const places = [];
+  for(const row of j.table.rows){
+    const get = k => { const c = row.c && row.c[labels.indexOf(k)]; return c == null ? null : c.v; };
+    const name = get('name');
+    if(name == null || String(name).trim() === '') continue;
+    const p = { name:String(name), type:get('type')||'', notes:get('notes')||'' };
+    if(get('category')) p.category = get('category');
+    const day = get('day');
+    if(day !== null && String(day).trim() !== '') p.day = String(day).trim();
+    if(get('home') === true || String(get('home')).toUpperCase() === 'TRUE') p.home = true;
+    if(get('pid')) p.pid = get('pid');
+    const lat = get('lat'), lng = get('lng');
+    if(typeof lat === 'number' && typeof lng === 'number'){ p.lat = lat; p.lng = lng; }
+    else p.unbaked = true;
+    if(typeof get('rating') === 'number'){ p.rating = get('rating'); p.count = get('count') || 0; }
+    for(const k of ['address','phone','whatsapp','website']) if(get(k)) p[k] = get(k);
+    const slug = get('slug');
+    if(slug){
+      p.slug = slug;
+      p.thumb = `photos/fillmore-ventura/${slug}-thumb.jpg`;
+      p.photos = [1,2,3].map(n => `photos/fillmore-ventura/${slug}-${n}.jpg`);
+    }
+    places.push(p);
+  }
+  if(!places.length) throw new Error('sheet empty');
+  return places;
+}
+
+function computeDefaultHome(){
+  const i = PLACES.findIndex(p => p.home && p.lat != null);
+  if(i < 0) return null; // no home row — directions simply omit the origin
+  const p = PLACES[i];
+  return { name:p.name, lat:p.lat, lng:p.lng, address:p.address, pid:p.pid, placeIdx:i, custom:false };
+}
+const TYPE_GRADIENT = {
+  "Hotel":"linear-gradient(135deg,#c9a227,#8b6914)",
+  "Apartment":"linear-gradient(135deg,#c9a227,#8b6914)",
+  "Street Food":"linear-gradient(135deg,#d98a5a,#a85a32)",
+  "Market":"linear-gradient(135deg,#d4a23c,#9a7320)",
+  "Park":"linear-gradient(135deg,#7faa5a,#46682f)",
+  "Cocktail Bar":"linear-gradient(135deg,#5a7ab0,#2d4e7a)",
+  "Museum":"linear-gradient(135deg,#6b7fb0,#3a4f80)",
+  "Ruin":"linear-gradient(135deg,#b08968,#6f4e37)",
+  "Restaurant":"linear-gradient(135deg,#d98a5a,#a85a32)",
+  "Bar":"linear-gradient(135deg,#5a7ab0,#2d4e7a)",
+  "Wine Bar":"linear-gradient(135deg,#9a4f7a,#6b2f55)",
+  "Park & Museum":"linear-gradient(135deg,#7faa5a,#46682f)",
+  "Café":"linear-gradient(135deg,#d4a23c,#9a7320)",
+  "Shopping":"linear-gradient(135deg,#d4a23c,#9a7320)",
+  "Church":"linear-gradient(135deg,#c0a060,#806030)",
+  "Landmark":"linear-gradient(135deg,#7a9ab0,#3a5f80)",
+  "Gelato":"linear-gradient(135deg,#e87a8a,#c04060)",
+  "Experience":"linear-gradient(135deg,#5aa7b0,#2d6a7a)",
+  "Fish Hatchery":"linear-gradient(135deg,#5a9ab0,#2d5f7a)",
+  "Farm Store":"linear-gradient(135deg,#d4a23c,#9a7320)",
+  "Trail":"linear-gradient(135deg,#7faa5a,#46682f)",
+  "Beach":"linear-gradient(135deg,#5fb0a0,#2d7a6a)",
+  "Brewery":"linear-gradient(135deg,#c98a3c,#8a5a1a)",
+  "Tour":"linear-gradient(135deg,#7a9ab0,#3a5f80)",
+  "Record Store":"linear-gradient(135deg,#8a6db0,#54408a)"
+};
+function gradFor(p){ return TYPE_GRADIENT[p.type] || "linear-gradient(135deg,#9ca3af,#4b5563)"; }
+function placeMetaHtml(p){
+  if(p.rating != null){
+    return `<span><b>${p.rating.toFixed(1)}</b> <span class="star">★</span> (${(p.count||0).toLocaleString()})</span> · <span>${p.type}</span>`;
+  }
+  return p.type ? `<span>${p.type}</span>` : '';
+}
+const photoIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`;
+
+let map, activeIdx = -1, markers = [], homeMarker = null, activeFilter = "all", activeDay = "all";
+let homeBase = null;
+let tempOrigin = loadTempOrigin();
+
+function loadHomeBase(){
+  try{
+    const s = localStorage.getItem(HOME_KEY);
+    if(s){
+      const h = JSON.parse(s);
+      if(h && typeof h.lat === "number" && typeof h.lng === "number" && h.name){
+        // Non-custom homes always re-derive from the sheet's home row, so
+        // reordering rows or changing the home checkbox takes effect on reload.
+        if(!h.custom) return DEFAULT_HOME ? {...DEFAULT_HOME} : null;
+        return h;
+      }
+    }
+  }catch(e){}
+  if(!DEFAULT_HOME) return null;
+  const home = {...DEFAULT_HOME};
+  localStorage.setItem(HOME_KEY, JSON.stringify(home));
+  return home;
+}
+function saveHomeBase(h){ homeBase = h; localStorage.setItem(HOME_KEY, JSON.stringify(h)); refreshHomeMarker(); }
+function loadTempOrigin(){
+  localStorage.removeItem(TEMP_ORIGIN_KEY);
+  try{
+    const s = sessionStorage.getItem(TEMP_ORIGIN_KEY);
+    if(s) return JSON.parse(s);
+  }catch(e){}
+  return null;
+}
+function saveTempOrigin(o){
+  tempOrigin = o;
+  if(o) sessionStorage.setItem(TEMP_ORIGIN_KEY, JSON.stringify(o));
+  else sessionStorage.removeItem(TEMP_ORIGIN_KEY);
+}
+function getDirectionsOrigin(){ return tempOrigin || homeBase; }
+function placeFor(loc){
+  if(loc.placeIdx != null && PLACES[loc.placeIdx]) return PLACES[loc.placeIdx];
+  return loc;
+}
+function resolvePid(loc){
+  const place = placeFor(loc);
+  return place.pid || null;
+}
+function endpointLabel(loc){
+  const place = placeFor(loc);
+  const name = place.name;
+  const address = place.address;
+  const lat = place.lat;
+  const lng = place.lng;
+  if(name && address) return `${name}, ${address}`;
+  if(address) return address;
+  if(name) return `${name}, Ventura County, CA`;
+  if(lat != null && lng != null) return `${lat},${lng}`;
+  return "";
+}
+function setDirectionsEndpoint(params, role, loc){
+  const label = endpointLabel(loc);
+  if(!label) return;
+  params.set(role, label);
+  const pid = resolvePid(loc);
+  if(pid) params.set(`${role}_place_id`, pid);
+}
+function directionsUrl(p){
+  const origin = getDirectionsOrigin();
+  const params = new URLSearchParams({ api:"1", travelmode:"driving" });
+  setDirectionsEndpoint(params, "destination", p);
+  if(origin) setDirectionsEndpoint(params, "origin", origin);
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+function setTempFromPlace(idx){
+  const p = PLACES[idx];
+  saveTempOrigin({name:p.name, lat:p.lat, lng:p.lng, pid:p.pid, address:p.address, placeIdx:idx});
+  if(activeIdx===idx) openDetail(idx);
+}
+function clearTempOrigin(){ saveTempOrigin(null); if(activeIdx>=0) openDetail(activeIdx); }
+window.setTempFromPlace = setTempFromPlace;
+window.clearTempOrigin = clearTempOrigin;
+
+function waUrl(num){ return `https://wa.me/${num.replace(/\D/g,'')}`; }
+function refreshHomeMarker(){
+  markers.forEach((m, i)=> m.el && m.el.classList.toggle('home', isHomePlace(i)));
+  if(!homeMarker) return;
+  if(!homeBase || (!homeBase.custom && homeBase.placeIdx != null)){
+    homeMarker.map = null;
+    return;
+  }
+  homeMarker.map = map;
+  homeMarker.position = {lat:homeBase.lat, lng:homeBase.lng};
+}
+
+// Kick off the sheet fetch immediately; the map script loads in parallel and
+// initMap awaits this before building markers.
+const placesReady = (async ()=>{
+  let rows = null;
+  try{ rows = await fetchSheetPlaces(); }
+  catch(e){ console.warn('Sheet unavailable, using built-in snapshot:', e); }
+  PLACES.push(...(rows || FALLBACK_PLACES));
+  DEFAULT_HOME = computeDefaultHome();
+  homeBase = loadHomeBase();
+})();
+
+function loadGoogleMaps(){
+  if(!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === "PASTE_YOUR_KEY_HERE"){
+    document.getElementById('keywarn').classList.add('show');
+    placesReady.then(buildList);
+    return;
+  }
+  const s = document.createElement('script');
+  s.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&v=weekly&libraries=marker,places&loading=async&callback=initMap`;
+  s.async = true;
+  s.onerror = ()=>{ document.getElementById('keywarn').classList.add('show'); placesReady.then(buildList); };
+  document.head.appendChild(s);
+}
+
+async function initMap(){
+  const { Map } = await google.maps.importLibrary("maps");
+  const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+  await placesReady;
+
+  map = new Map(document.getElementById('map'), {
+    center:{lat:34.34, lng:-119.0}, zoom:10,
+    mapId:"DEMO_MAP_ID",
+    mapTypeControl:false, streetViewControl:false, fullscreenControl:false,
+    gestureHandling:"greedy"
+  });
+
+  PLACES.forEach((p, idx)=>{
+    if(p.lat == null){ markers.push({marker:null, el:null}); return; }
+    const el = document.createElement('div');
+    el.className = 'num-chip' + (isHomePlace(idx) ? ' home' : '');
+    el.textContent = (idx+1);
+    const marker = new AdvancedMarkerElement({ map, position:{lat:p.lat, lng:p.lng}, content:el });
+    marker.addListener('gmp-click', ()=> openDetail(idx));
+    el.addEventListener('click', ()=> openDetail(idx));
+    markers.push({marker, el});
+  });
+
+  const homeEl = document.createElement('div');
+  homeEl.className = 'num-chip home';
+  homeEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>`;
+  if(homeBase) homeMarker = new AdvancedMarkerElement({ map, position:{lat:homeBase.lat, lng:homeBase.lng}, content:homeEl, zIndex:500 });
+  refreshHomeMarker();
+
+  buildList();
+  loadAllPhotos();
+  ensureOverlay();
+}
+window.initMap = initMap;
+
+function refreshChips(){
+  markers.forEach((m,i)=> m.el && m.el.classList.toggle('active', i===activeIdx));
+}
+
+function isHomePlace(idx){
+  return !!homeBase && !homeBase.custom && homeBase.placeIdx === idx;
+}
+function placeMatchesFilter(p){
+  const catOk = activeFilter === "all" || p.category === activeFilter;
+  // Home base always shows so it anchors any single-day view.
+  const dayOk = activeDay === "all" || p.home || p.day === activeDay;
+  return catOk && dayOk;
+}
+function filteredIndices(){
+  return PLACES.map((_, i)=>i).filter(i=>placeMatchesFilter(PLACES[i]));
+}
+function updateMarkerVisibility(){
+  markers.forEach((m, i)=>{
+    if(!m.marker) return;
+    const show = placeMatchesFilter(PLACES[i]);
+    m.marker.map = show ? map : null;
+  });
+}
+
+function buildFilters(){
+  const filtersEl = document.getElementById('filters');
+  const addBtn = document.getElementById('addBtn');
+  // Distinct categories from the sheet, alphabetical.
+  const cats = [...new Set(PLACES.map(p => p.category).filter(Boolean))].sort();
+  // If the active filter's category disappeared, fall back to "all".
+  if(activeFilter !== 'all' && !cats.includes(activeFilter)) activeFilter = 'all';
+  filtersEl.querySelectorAll('.filter-chip').forEach(c => { if(c.dataset.cat !== 'all') c.remove(); });
+  filtersEl.querySelector('.filter-chip[data-cat="all"]').classList.toggle('on', activeFilter === 'all');
+  cats.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'filter-chip' + (activeFilter === cat ? ' on' : '');
+    b.dataset.cat = cat;
+    b.textContent = cat;
+    filtersEl.insertBefore(b, addBtn);
+  });
+}
+
+function buildDayFilter(){
+  const days = [...new Set(PLACES.map(p => p.day).filter(Boolean))].sort((a,b)=> (+a) - (+b));
+  document.querySelectorAll('.day-select').forEach(sel => {
+    sel.innerHTML = '<option value="all">All pins</option>' +
+      days.map(d => `<option value="${d}">Day ${d}</option>`).join('');
+    sel.value = activeDay;
+  });
+}
+function setDay(val){
+  activeDay = val;
+  document.querySelectorAll('.day-select').forEach(s => { s.value = val; });
+  buildList();
+  if(activeIdx >= 0 && !placeMatchesFilter(PLACES[activeIdx])) closeDetail();
+  fitMapToVisible();
+}
+
+function reorderEnabled(){ return activeFilter === 'all' && activeDay === 'all'; }
+
+function makeListItem(idx){
+  const p = PLACES[idx];
+  const div = document.createElement('div');
+  div.className = 'list-item' + (isHomePlace(idx) ? ' home' : '') + (p.unbaked ? ' unbaked' : '');
+  div.dataset.idx = idx;
+  const meta = p.unbaked ? '<span>New — pin & photos pending bake</span>' : placeMetaHtml(p);
+  const thumbSrc = p.thumb || (p.photos && p.photos[0]);
+  const thumbInner = thumbSrc
+    ? `<img src="${thumbSrc}" alt="" loading="lazy" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">`
+    : photoIcon;
+  div.innerHTML = `
+    <div class="thumb" style="background:${gradFor(p)}"><span class="li-num">${idx+1}</span>${thumbInner}</div>
+    <div class="li-body">
+      <div class="li-title">
+        <h3>${p.name}</h3>
+      </div>
+      ${meta ? `<div class="li-meta">${meta}</div>` : ''}
+      <div class="li-desc">${p.notes||''}</div>
+    </div>`;
+  div.addEventListener('click', ()=> openDetail(idx));
+  return div;
+}
+
+function makeDivider(label, day){
+  const d = document.createElement('div');
+  d.className = 'day-divider';
+  d.dataset.day = day;
+  d.innerHTML = `<span>${label}</span>`;
+  return d;
+}
+
+function buildList(){
+  buildFilters();
+  buildDayFilter();
+  const listEl = document.getElementById('list');
+  listEl.classList.toggle('reorderable', reorderEnabled());
+  listEl.innerHTML = '';
+  const visible = i => placeMatchesFilter(PLACES[i]);
+
+  if(activeDay === 'all'){
+    // Grouped view: home first, then a labelled section per day, then unscheduled.
+    PLACES.forEach((p, idx)=>{ if(p.home && visible(idx)) listEl.appendChild(makeListItem(idx)); });
+    const days = [...new Set(PLACES.filter(p=>!p.home && p.day).map(p=>p.day))].sort((a,b)=> (+a)-(+b));
+    days.forEach(d=>{
+      const items = PLACES.map((p,i)=>i).filter(i=> !PLACES[i].home && PLACES[i].day===d && visible(i));
+      if(!items.length) return;
+      listEl.appendChild(makeDivider('Day ' + d, d));
+      items.forEach(i=> listEl.appendChild(makeListItem(i)));
+    });
+    const untag = PLACES.map((p,i)=>i).filter(i=> !PLACES[i].home && !PLACES[i].day && visible(i));
+    if(untag.length){
+      listEl.appendChild(makeDivider('Unscheduled', ''));
+      untag.forEach(i=> listEl.appendChild(makeListItem(i)));
+    }
+  } else {
+    PLACES.forEach((p, idx)=>{ if(visible(idx)) listEl.appendChild(makeListItem(idx)); });
+  }
+  updateMarkerVisibility();
+}
+
+function setThumb(idx){
+  const p = PLACES[idx];
+  const src = p.thumb || (p.photos && p.photos[0]);
+  const el = document.querySelector(`.list-item[data-idx="${idx}"] .thumb`);
+  if(!el || !src) return;
+  let img = el.querySelector('img');
+  if(!img){
+    img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    img.onerror = ()=> img.style.display='none';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+    el.appendChild(img);
+  }
+  img.src = src;
+  img.style.display = '';
+}
+function refreshListMeta(idx){
+  const p = PLACES[idx];
+  if(p.unbaked) return; // keep the "pending bake" note
+  const el = document.querySelector(`.list-item[data-idx="${idx}"] .li-meta`);
+  if(!el) return;
+  const meta = placeMetaHtml(p);
+  if(meta){
+    el.innerHTML = meta;
+    el.style.display = '';
+  }
+}
+
+async function fetchPlaceDetails(p){
+  // rating/count/address/phone are cached in PLACES, so we only request `photos`
+  // here — this keeps the call out of the costly Place Details Enterprise tier.
+  // Skip entirely when photos are already provided (no API call at all).
+  if(!p.pid || (p.photos && p.photos.length)) return;
+  try{
+    const r = await fetch(`https://places.googleapis.com/v1/places/${p.pid}?fields=photos&key=${GOOGLE_MAPS_API_KEY}`);
+    if(!r.ok) return;
+    const data = await r.json();
+    if(data.photos && data.photos.length){
+      p.photos = data.photos.slice(0,3).map(ph =>
+        `https://places.googleapis.com/v1/${ph.name}/media?maxWidthPx=900&key=${GOOGLE_MAPS_API_KEY}`);
+    }
+  }catch(e){}
+}
+
+async function loadAllPhotos(){
+  for(const [idx,p] of PLACES.entries()){
+    await fetchPlaceDetails(p);
+    if(p.photos) setThumb(idx);
+    refreshListMeta(idx);
+    if(idx===activeIdx) openDetail(idx);
+  }
+}
+
+function renderDetailExtra(p){
+  const el = document.getElementById('dExtra');
+  let html = '';
+  if(p.address) html += `<div class="detail-address">${p.address}</div>`;
+  if(p.whatsapp){
+    html += `<a class="detail-wa" href="${waUrl(p.whatsapp)}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 0 0 .614.614l4.458-1.495A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.006-1.37l-.36-.214-2.647.887.887-2.647-.234-.371A9.818 9.818 0 1 1 12 21.818z"/></svg>
+      ${p.whatsapp}</a>`;
+  }
+  el.innerHTML = html;
+  el.style.display = html ? 'flex' : 'none';
+}
+
+const detail = document.getElementById('detail');
+let photoIdx = 0;
+
+function renderPhoto(p){
+  const imgEl = document.getElementById('detailImg');
+  const dotsEl = document.getElementById('detailDots');
+  imgEl.style.display='block';
+  imgEl.onerror = ()=> imgEl.style.display='none';
+  imgEl.onload = ()=> imgEl.style.display='block';
+  imgEl.src = p.photos[photoIdx];
+  dotsEl.innerHTML = p.photos.length>1
+    ? p.photos.map((_,i)=>`<span class="${i===photoIdx?'on':''}" onclick="photoGoto(${i})"></span>`).join('')
+    : '';
+}
+function photoStep(dir){
+  const p = PLACES[activeIdx];
+  if(!p || !p.photos || p.photos.length<2) return;
+  photoIdx = (photoIdx + dir + p.photos.length) % p.photos.length;
+  renderPhoto(p);
+}
+function photoGoto(i){
+  const p = PLACES[activeIdx];
+  if(!p || !p.photos) return;
+  photoIdx = i; renderPhoto(p);
+}
+
+function openDetail(idx){
+  activeIdx = idx; refreshChips();
+  const p = PLACES[idx];
+  document.querySelectorAll('.list-item').forEach(el=>el.classList.toggle('active', +el.dataset.idx===idx));
+
+  const photoEl = document.getElementById('detailPhoto');
+  const imgEl = document.getElementById('detailImg');
+  const dotsEl = document.getElementById('detailDots');
+  photoEl.style.background = gradFor(p);
+  if(p.photos && p.photos.length){
+    photoIdx = 0;
+    photoEl.classList.toggle('multi', p.photos.length>1);
+    renderPhoto(p);
+  } else {
+    photoEl.classList.remove('multi');
+    imgEl.style.display='none'; imgEl.removeAttribute('src'); dotsEl.innerHTML='';
+  }
+
+  const numEl = document.getElementById('dNum');
+  numEl.textContent = idx+1;
+  numEl.style.background = isHomePlace(idx) ? '#f5a623' : '';
+  document.getElementById('dName').textContent = p.name;
+  const subEl = document.getElementById('dSub');
+  const subMeta = placeMetaHtml(p);
+  if(subMeta){
+    subEl.innerHTML = subMeta;
+    subEl.style.display = 'flex';
+  } else {
+    subEl.innerHTML = '';
+    subEl.style.display = 'none';
+  }
+
+  let html = `<a class="btn-primary" href="${directionsUrl(p)}" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+      Directions</a>`;
+  const isTempHere = tempOrigin && tempOrigin.placeIdx === idx;
+  if(!isTempHere){
+    html += `<button type="button" class="btn-round" onclick="setTempFromPlace(${idx})" aria-label="Start next directions from here" title="Start next directions from here"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg></button>`;
+  } else {
+    html += `<button type="button" class="btn-round" onclick="clearTempOrigin()" aria-label="Clear temporary starting point" title="Clear temporary starting point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  }
+  if(p.phone) html += `<a class="btn-round" href="tel:${p.phone.replace(/\s/g,'')}" aria-label="Call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>`;
+  if(p.website) html += `<a class="btn-round" href="${p.website}" target="_blank" rel="noopener" aria-label="Website"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></a>`;
+  document.getElementById('dActions').innerHTML = html;
+
+  const notes = document.getElementById('dNotes');
+  if(p.notes){ notes.style.display='block'; document.getElementById('dNotesText').textContent = p.notes; }
+  else notes.style.display='none';
+
+  renderDetailExtra(p);
+  if(p.pid) fetchPlaceDetails(p).then(()=>{
+    if(activeIdx!==idx) return;
+    refreshListMeta(idx);
+    const sub = placeMetaHtml(p);
+    if(sub){
+      document.getElementById('dSub').innerHTML = sub;
+      document.getElementById('dSub').style.display = 'flex';
+    }
+    renderDetailExtra(p);
+  });
+
+  let c='';
+  if(p.phone && !p.whatsapp) c += `<a href="tel:${p.phone.replace(/\s/g,'')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${p.phone}</a>`;
+  if(p.website){ const d=p.website.replace(/^https?:\/\//,'').replace(/\/$/,''); c += `<a href="${p.website}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>${d}</a>`; }
+  document.getElementById('dContact').innerHTML = c;
+
+  const filtered = filteredIndices();
+  const pos = filtered.indexOf(idx);
+  document.getElementById('navCount').textContent = `${pos+1} of ${filtered.length}`;
+  document.getElementById('navPrev').disabled = pos <= 0;
+  document.getElementById('navNext').disabled = pos >= filtered.length - 1;
+
+  detail.classList.add('show');
+  syncMapForPlace(idx);
+}
+function syncMapForPlace(idx){
+  if(!map || idx < 0) return;
+  try{ focusPlaceOnMap(idx); }catch(e){}
+}
+function closeDetail(){
+  detail.classList.remove('show'); activeIdx=-1; refreshChips();
+  document.querySelectorAll('.list-item').forEach(el=>el.classList.remove('active'));
+  scheduleMapViewSync();
+}
+function stepDetail(dir){
+  const filtered = filteredIndices();
+  const pos = filtered.indexOf(activeIdx);
+  if(pos < 0) return;
+  const nextPos = pos + dir;
+  if(nextPos < 0 || nextPos >= filtered.length) return;
+  openDetail(filtered[nextPos]);
+}
+window.stepDetail = stepDetail;
+
+function sharePrototype(){
+  const url = window.location.href;
+  if(navigator.share){ navigator.share({title:"Fillmore & Ventura – LA Times Itinerary", url}).catch(()=>{}); }
+  else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(showToast).catch(showToast); }
+  else showToast();
+}
+function showToast(){ const t=document.getElementById('toast'); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
+document.getElementById('filters').addEventListener('click', e=>{
+  const chip = e.target.closest('.filter-chip');
+  if(!chip) return;
+  activeFilter = chip.dataset.cat;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.toggle('on', c===chip));
+  buildList();
+  if(activeIdx>=0 && !placeMatchesFilter(PLACES[activeIdx])) closeDetail();
+});
+
+document.querySelectorAll('.day-select').forEach(s => {
+  s.addEventListener('change', () => setDay(s.value));
+  // Inside the mobile drag handle: don't let taps toggle the sheet.
+  ['pointerdown','touchstart','mousedown','click'].forEach(ev =>
+    s.addEventListener(ev, e => e.stopPropagation()));
+});
+
+const panel = document.getElementById('panel');
+const handle = document.getElementById('handle');
+let dragStartY = null, dragMoved = false;
+function isMobile(){ return window.matchMedia('(max-width:760px)').matches; }
+
+function sheetBottomPx(){
+  if(!isMobile()) return 0;
+  if(detail.classList.contains('show')) return detail.offsetHeight || 0;
+  return panel.offsetHeight || 0;
+}
+let mapSyncOverlay = null;
+let overlayAttached = false;
+function getMapSyncOverlay(){
+  if(!mapSyncOverlay && google.maps?.OverlayView){
+    mapSyncOverlay = new google.maps.OverlayView();
+    mapSyncOverlay.onAdd = function(){};
+    mapSyncOverlay.draw = function(){};
+  }
+  return mapSyncOverlay;
+}
+function ensureOverlay(){
+  const ov = getMapSyncOverlay();
+  if(ov && map && !overlayAttached){ ov.setMap(map); overlayAttached = true; }
+  return ov;
+}
+function mapObstructionPx(){
+  let bottom = 0, right = 0;
+  if(isMobile()) bottom = sheetBottomPx();
+  else if(detail.classList.contains('show')) right = (detail.offsetWidth || 540) + 44;
+  return { bottom, right };
+}
+function offsetCenterFor(center, bottom, right){
+  const ov = ensureOverlay();
+  const proj = ov && ov.getProjection && ov.getProjection();
+  if(!proj) return null;
+  const pt = proj.fromLatLngToContainerPixel(new google.maps.LatLng(center.lat, center.lng));
+  if(!pt) return null;
+  const target = proj.fromContainerPixelToLatLng(new google.maps.Point(pt.x + right / 2, pt.y + bottom / 2));
+  return target || null;
+}
+function focusPlaceOnMap(idx){
+  if(!map || idx < 0) return;
+  const p = PLACES[idx];
+  if(!p || p.lat == null) return;
+  const center = { lat: p.lat, lng: p.lng };
+  const { bottom, right } = mapObstructionPx();
+  if(bottom <= 0 && right <= 0){ map.panTo(center); return; }
+  const target = offsetCenterFor(center, bottom, right);
+  map.panTo(target || center);
+}
+function scheduleMapViewSync(){
+  if(activeIdx >= 0) syncMapForPlace(activeIdx);
+}
+
+// Pixels of the map currently covered by UI, so fitBounds can pad toward the
+// visible area. Reflects live sheet state (mobile: collapsed vs expanded height).
+function viewObstruction(){
+  if(isMobile()) return { top:0, right:0, bottom: sheetBottomPx(), left:0 };
+  const rightEl = detail.classList.contains('show') ? detail : panel;
+  return { top:0, right:(rightEl.offsetWidth || 430) + 44, bottom:0, left:0 };
+}
+function fitMapToVisible(){
+  if(!map || !window.google || !google.maps) return;
+  const pts = PLACES.filter(p => placeMatchesFilter(p) && p.lat != null);
+  if(!pts.length) return;
+  const o = viewObstruction(), gap = 48;
+  if(pts.length === 1){
+    map.setZoom(15);
+    const c = { lat: pts[0].lat, lng: pts[0].lng };
+    map.panTo(offsetCenterFor(c, o.bottom, o.right) || c);
+    return;
+  }
+  const b = new google.maps.LatLngBounds();
+  pts.forEach(p => b.extend({ lat: p.lat, lng: p.lng }));
+  map.fitBounds(b, { top: gap+o.top, right: gap+o.right, bottom: gap+o.bottom, left: gap+o.left });
+}
+
+function setPanelCollapsed(collapsed){
+  if(!isMobile()) return;
+  panel.classList.toggle('collapsed', collapsed);
+  scheduleMapViewSync();
+}
+
+handle.addEventListener('touchstart', e=>{
+  if(!isMobile()) return;
+  dragStartY = e.touches[0].clientY;
+  dragMoved = false;
+}, {passive:true});
+
+handle.addEventListener('touchmove', e=>{
+  if(dragStartY===null || !isMobile()) return;
+  const dy = e.touches[0].clientY - dragStartY;
+  if(Math.abs(dy) > 8) dragMoved = true;
+  if(dy > 50) setPanelCollapsed(true);
+  else if(dy < -50) setPanelCollapsed(false);
+}, {passive:true});
+
+handle.addEventListener('touchend', ()=>{
+  if(dragStartY===null || !isMobile()) return;
+  if(!dragMoved) setPanelCollapsed(panel.classList.contains('collapsed') ? false : true);
+  dragStartY = null;
+});
+
+handle.addEventListener('mousedown', e=>{
+  if(!isMobile()) return;
+  dragStartY = e.clientY;
+  dragMoved = false;
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e=>{
+  if(dragStartY===null || !isMobile()) return;
+  const dy = e.clientY - dragStartY;
+  if(Math.abs(dy) > 8) dragMoved = true;
+  if(dy > 50) setPanelCollapsed(true);
+  else if(dy < -50) setPanelCollapsed(false);
+});
+document.addEventListener('mouseup', e=>{
+  if(dragStartY===null || !isMobile()) return;
+  if(!dragMoved) setPanelCollapsed(panel.classList.contains('collapsed') ? false : true);
+  dragStartY = null;
+});
+
+if(isMobile()) panel.classList.add('collapsed');
+
+document.getElementById('navPrev').addEventListener('click', ()=> stepDetail(-1));
+document.getElementById('navNext').addEventListener('click', ()=> stepDetail(1));
+
+panel.addEventListener('transitionend', e=>{
+  if(e.propertyName === 'height') scheduleMapViewSync();
+});
+window.addEventListener('resize', scheduleMapViewSync);
+
+// gallery: swipe + keyboard
+(function(){
+  const ph = document.getElementById('detailPhoto');
+  let sx=null;
+  ph.addEventListener('touchstart', e=>{ sx=e.touches[0].clientX; }, {passive:true});
+  ph.addEventListener('touchend', e=>{
+    if(sx===null) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    if(dx<-40) photoStep(1); else if(dx>40) photoStep(-1);
+    sx=null;
+  });
+  document.addEventListener('keydown', e=>{
+    if(!detail.classList.contains('show')) return;
+    if(e.key==='ArrowRight') photoStep(1);
+    else if(e.key==='ArrowLeft') photoStep(-1);
+    else if(e.key==='Escape') closeDetail();
+  });
+})();
+
+// ===== Add place (posts to the Apps Script web app, which appends + bakes) =====
+(function(){
+  if(!APPS_SCRIPT_URL) return; // feature dormant until the web app is deployed
+  const btn = document.getElementById('addBtn');
+  const overlay = document.getElementById('addOverlay');
+  const nameEl = document.getElementById('afName');
+  const catEl = document.getElementById('afCat');
+  const typeEl = document.getElementById('afType');
+  const notesEl = document.getElementById('afNotes');
+  const submitEl = document.getElementById('afSubmit');
+  const statusEl = document.getElementById('afStatus');
+  let busy = false;
+
+  btn.style.display = '';
+  function openForm(){
+    overlay.classList.add('show');
+    statusEl.textContent = ''; statusEl.classList.remove('err');
+    setTimeout(()=> nameEl.focus(), 50);
+  }
+  function closeForm(){ if(!busy) overlay.classList.remove('show'); }
+  btn.addEventListener('click', openForm);
+  document.getElementById('afCancel').addEventListener('click', closeForm);
+  overlay.addEventListener('click', e=>{ if(e.target === overlay) closeForm(); });
+  document.addEventListener('keydown', e=>{
+    if(e.key === 'Escape' && overlay.classList.contains('show')) closeForm();
+  });
+
+  async function submit(){
+    if(busy) return;
+    const name = nameEl.value.trim();
+    if(!name){ statusEl.textContent = 'Name is required.'; statusEl.classList.add('err'); nameEl.focus(); return; }
+    busy = true;
+    submitEl.disabled = true;
+    statusEl.classList.remove('err');
+    statusEl.textContent = 'Adding to the sheet & fetching photos… (can take ~20s)';
+    try{
+      const body = new URLSearchParams({
+        city: 'Fillmore & Ventura',
+        name, category: catEl.value, type: typeEl.value.trim(), notes: notesEl.value.trim()
+      });
+      const r = await fetch(APPS_SCRIPT_URL, { method:'POST', body });
+      const j = await r.json().catch(()=>({ ok:r.ok }));
+      if(!j.ok) throw new Error(j.error || `request failed (${r.status})`);
+      statusEl.textContent = j.baked
+        ? 'Added & baked! Photos go live when the site redeploys (~1 min). Reloading…'
+        : 'Added to the sheet — it will show greyed until baked. Reloading…';
+      setTimeout(()=> location.reload(), 1600);
+    }catch(err){
+      statusEl.textContent = 'Failed: ' + err.message;
+      statusEl.classList.add('err');
+      busy = false;
+      submitEl.disabled = false;
+    }
+  }
+  submitEl.addEventListener('click', submit);
+  nameEl.addEventListener('keydown', e=>{ if(e.key === 'Enter') submit(); });
+})();
+
+// ===== Drag-to-reorder the list (long-press, unfiltered view only) =====
+// Reorders PLACES + markers optimistically, then persists the new row order
+// to the sheet via the Apps Script "reorder" action (keyed by slug/name).
+(function(){
+  const listEl = document.getElementById('list');
+  let src = null, holdTimer = null, dragging = false, startY = 0, pointerId = null, justDragged = false;
+
+  function beginDrag(){
+    if(!src) return;
+    dragging = true;
+    if(activeIdx >= 0) closeDetail();
+    src.classList.add('drag-src');
+    document.body.style.userSelect = 'none';
+    try{ src.setPointerCapture(pointerId); }catch(_){}
+  }
+  function cleanup(){
+    clearTimeout(holdTimer);
+    if(src) src.classList.remove('drag-src');
+    document.body.style.userSelect = '';
+    src = null; dragging = false; pointerId = null;
+  }
+
+  listEl.addEventListener('pointerdown', e=>{
+    if(!reorderEnabled()) return;
+    const item = e.target.closest('.list-item');
+    if(!item || item.classList.contains('home')) return;
+    src = item; startY = e.clientY; pointerId = e.pointerId;
+    holdTimer = setTimeout(beginDrag, 400);
+  });
+  listEl.addEventListener('pointermove', e=>{
+    if(!src) return;
+    if(!dragging){
+      if(Math.abs(e.clientY - startY) > 10){ clearTimeout(holdTimer); src = null; } // scroll intent
+      return;
+    }
+    e.preventDefault();
+    const y = e.clientY;
+    // Consider dividers AND items as boundaries, so crossing a divider moves
+    // the item into that day group. Never land above the first divider (home zone).
+    const kids = [...listEl.children].filter(el => el !== src && !el.classList.contains('home'));
+    let ref = null;
+    for(const el of kids){
+      const r = el.getBoundingClientRect();
+      if(y < r.top + r.height / 2){ ref = el; break; }
+    }
+    const firstDivider = listEl.querySelector('.day-divider');
+    if(ref && ref === firstDivider){ ref = firstDivider.nextSibling === src ? src.nextSibling : firstDivider.nextSibling; }
+    if(ref) listEl.insertBefore(src, ref); else listEl.appendChild(src);
+  });
+  listEl.addEventListener('pointerup', e=>{
+    clearTimeout(holdTimer);
+    if(dragging){ e.preventDefault(); commitOrder(); justDragged = true; }
+    cleanup();
+  });
+  listEl.addEventListener('pointercancel', cleanup);
+  // On touch, scrolling is driven by touchmove and ignores preventDefault from a
+  // passive listener — so stop the list scrolling while a drag is in progress.
+  listEl.addEventListener('touchmove', e=>{ if(dragging) e.preventDefault(); }, { passive:false });
+  // Suppress the click that follows a drag so it doesn't open the detail card.
+  listEl.addEventListener('click', e=>{
+    if(justDragged){ justDragged = false; e.stopPropagation(); e.preventDefault(); }
+  }, true);
+
+  function commitOrder(){
+    // Walk the DOM: dividers set the current day, items inherit it.
+    const seq = [];
+    let curDay = '';
+    [...listEl.children].forEach(el => {
+      if(el.classList.contains('day-divider')){ curDay = el.dataset.day || ''; return; }
+      if(el.classList.contains('list-item')){
+        seq.push({ idx: +el.dataset.idx, day: el.classList.contains('home') ? '' : curDay });
+      }
+    });
+    if(seq.length !== PLACES.length) return; // safety: only whole-list reorder
+    const newPlaces = seq.map(s => { const p = PLACES[s.idx]; if(s.day) p.day = s.day; else delete p.day; return p; });
+    const newMarkers = seq.map(s => markers[s.idx]);
+    PLACES.length = 0; PLACES.push(...newPlaces);
+    markers.length = 0; markers.push(...newMarkers);
+    DEFAULT_HOME = computeDefaultHome();
+    markers.forEach((m, i)=>{ if(m.el) m.el.textContent = i + 1; });
+    buildList();
+    refreshHomeMarker();
+    persistOrder();
+  }
+
+  async function persistOrder(){
+    if(!APPS_SCRIPT_URL) return;
+    const order = PLACES.map(p => ({ k: p.slug || p.name, d: p.day || '' }));
+    try{
+      const r = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: new URLSearchParams({ action: 'reorder', city: 'Fillmore & Ventura', order: JSON.stringify(order) })
+      });
+      const j = await r.json().catch(()=>({ ok:r.ok }));
+      if(!j.ok) throw new Error(j.error || `request failed (${r.status})`);
+    }catch(err){
+      alert('Could not save the new order: ' + err.message + '\nReloading to resync with the sheet.');
+      location.reload();
+    }
+  }
+})();
+
+// Load map immediately
+loadGoogleMaps();
+
+</script>
+</body>
+</html>
