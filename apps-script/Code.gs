@@ -1,12 +1,14 @@
 /**
- * Mappy bake script — bound to the "Mappy Rome" spreadsheet.
+ * Mappy bake script — bound to the "Mappy Rome" spreadsheet (one tab per city:
+ * Rome, Chicago, …).
  *
  * What it does:
- *  - doPost: the map app's "＋ Add place" form posts here → appends a row,
- *    then bakes it immediately (Places lookup → fill columns F–O → download
- *    3 photos @900px + thumb @320px → commit them to the GitHub repo).
+ *  - doPost: each map page's "＋ Add place" form posts here with city=<tab> →
+ *    appends a row to that city's tab, then bakes it immediately (Places
+ *    lookup → fill columns F–O → download 3 photos @900px + thumb @320px →
+ *    commit them to the GitHub repo under that city's photos dir).
  *  - "Mappy → Bake new rows" menu in the sheet: bakes any rows added by hand
- *    (rows with a name but no pid).
+ *    (rows with a name but no pid) on whichever city tab is active.
  *
  * One-time setup:
  *  1. Open the sheet → Extensions → Apps Script → paste this file as Code.gs.
@@ -17,13 +19,23 @@
  *                      permission: Contents = Read and write. Nothing else.
  *  3. Deploy → New deployment → Web app: Execute as = Me,
  *     Who has access = Anyone. Copy the /exec URL into APPS_SCRIPT_URL
- *     in rome.html.
+ *     in rome.html / chicago.html.
+ *
+ * Adding a city later: add its tab (copy the Rome header row), add an entry
+ * to CITIES below, paste the updated file here, then Deploy → Manage
+ * deployments → ✎ → Version: New version (the /exec URL stays the same).
  */
 
-const SHEET_NAME = 'Rome';
+// One tab per city in this spreadsheet; each map page posts city=<name>.
+// Requests without a city keep working against Rome (older rome.html).
+const CITIES = {
+  Rome:    { dir: 'photos/rome',    querySuffix: ', Rome, Italy' },
+  Chicago: { dir: 'photos/chicago', querySuffix: ', Chicago, IL' },
+  'Fillmore & Ventura': { dir: 'photos/fillmore-ventura', querySuffix: ', Ventura County, CA' }
+};
+const DEFAULT_CITY = 'Rome';
 const REPO = 'PBensaid-personal/mappy';
 const BRANCH = 'main';
-const CITY_DIR = 'photos/rome';
 
 // Sheet columns (1-based): A name, B category, C type, D notes, E home,
 // F slug, G pid, H lat, I lng, J rating, K count, L address, M phone,
@@ -43,15 +55,16 @@ function doPost(e){
   const lock = LockService.getScriptLock();
   lock.tryLock(30000);
   try{
+    const city = cityFor(p);
     const name = String(p.name || '').trim();
     if(!name) throw new Error('name is required');
-    const sh = sheet();
+    const sh = sheet(city);
     sh.appendRow([name, p.category || '', p.type || '', p.notes || '',
                   '', '', '', '', '', '', '', '', '', '']);
     out.ok = true;
     out.row = sh.getLastRow();
     try{
-      out.baked = bakeRow(sh, out.row);
+      out.baked = bakeRow(sh, out.row, city);
     }catch(bakeErr){
       out.baked = false;
       out.bakeError = String(bakeErr);
@@ -75,7 +88,7 @@ function handleReorder(p){
   try{
     const order = JSON.parse(p.order || '[]');
     if(!Array.isArray(order) || !order.length) throw new Error('empty order');
-    const sh = sheet();
+    const sh = sheet(cityFor(p));
     const last = sh.getLastRow();
     if(last < 2) throw new Error('no rows');
     const width = sh.getLastColumn();
@@ -109,33 +122,48 @@ function handleReorder(p){
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// Bakes the tab currently open in the sheet UI — switch to a city tab first.
 function bakeAll(){
-  const sh = sheet();
+  const sh = SpreadsheetApp.getActiveSheet();
+  const city = sh.getName();
+  if(!CITIES[city]){
+    SpreadsheetApp.getUi().alert('No city config for tab "' + city + '" — add it to CITIES in Code.gs.');
+    return;
+  }
   const last = sh.getLastRow();
   let baked = 0, failed = [];
   for(let r = 2; r <= last; r++){
     const hasName = String(sh.getRange(r, COL_NAME).getValue()).trim() !== '';
     const hasPid = String(sh.getRange(r, COL_PID).getValue()).trim() !== '';
     if(!hasName || hasPid) continue;
-    try{ if(bakeRow(sh, r)) baked++; }
+    try{ if(bakeRow(sh, r, city)) baked++; }
     catch(err){ failed.push(sh.getRange(r, COL_NAME).getValue() + ': ' + err); }
   }
   SpreadsheetApp.getUi().alert(
-    'Baked ' + baked + ' row(s).' + (failed.length ? '\n\nFailed:\n' + failed.join('\n') : ''));
+    'Baked ' + baked + ' ' + city + ' row(s).' + (failed.length ? '\n\nFailed:\n' + failed.join('\n') : ''));
 }
 
-function sheet(){
-  return SpreadsheetApp.getActive().getSheetByName(SHEET_NAME);
+function cityFor(p){
+  const city = String((p && p.city) || DEFAULT_CITY);
+  if(!CITIES[city]) throw new Error('unknown city: ' + city);
+  return city;
+}
+
+function sheet(city){
+  const sh = SpreadsheetApp.getActive().getSheetByName(city);
+  if(!sh) throw new Error('no sheet tab named ' + city);
+  return sh;
 }
 
 function props(){
   return PropertiesService.getScriptProperties();
 }
 
-function bakeRow(sh, r){
+function bakeRow(sh, r, city){
   const KEY = props().getProperty('PLACES_KEY');
   const TOKEN = props().getProperty('GITHUB_TOKEN');
   if(!KEY || !TOKEN) throw new Error('Set PLACES_KEY and GITHUB_TOKEN in Script Properties');
+  const cfg = CITIES[city || DEFAULT_CITY];
 
   const name = String(sh.getRange(r, COL_NAME).getValue()).trim();
 
@@ -149,7 +177,7 @@ function bakeRow(sh, r){
         'places.userRatingCount,places.formattedAddress,places.internationalPhoneNumber,' +
         'places.websiteUri,places.photos'
     },
-    payload: JSON.stringify({ textQuery: name + ', Rome, Italy', pageSize: 1 }),
+    payload: JSON.stringify({ textQuery: name + cfg.querySuffix, pageSize: 1 }),
     muteHttpExceptions: true
   });
   if(resp.getResponseCode() >= 300) throw new Error('Places API: ' + resp.getContentText().slice(0, 180));
@@ -161,11 +189,11 @@ function bakeRow(sh, r){
   // 2. Photos: same photo fetched at two widths — no resizing needed
   const photoRefs = (place.photos || []).slice(0, 3);
   photoRefs.forEach(function(ph, i){
-    ghPutFile(CITY_DIR + '/' + slug + '-' + (i + 1) + '.jpg',
+    ghPutFile(cfg.dir + '/' + slug + '-' + (i + 1) + '.jpg',
       fetchPhoto(ph.name, 900, KEY), TOKEN, 'Add photo ' + (i + 1) + ' for ' + name);
   });
   if(photoRefs[0]){
-    ghPutFile(CITY_DIR + '/' + slug + '-thumb.jpg',
+    ghPutFile(cfg.dir + '/' + slug + '-thumb.jpg',
       fetchPhoto(photoRefs[0].name, 320, KEY), TOKEN, 'Add thumb for ' + name);
   }
 
