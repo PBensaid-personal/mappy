@@ -7,7 +7,27 @@
       "mcp__sandbox__sheets__update_range",
       "Bash(curl -s \"https://docs.google.com/spreadsheets/d/1XOTG14SyH4OqPo2nw87Pef7KG7MGLMg5KEdQBf5c3io/gviz/tq?tqx=out:json&sheet=Rome&headers=1\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://docs.google.com/spreadsheets/d/1XOTG14SyH4OqPo2nw87Pef7KG7MGLMg5KEdQBf5c3io/gviz/tq?tqx=out:json&sheet=Rome&headers=1\")",
-      "mcp__sandbox__sheets__clear_values"
+      "mcp__sandbox__sheets__clear_values",
+      "Bash(curl -s \"https://docs.google.com/spreadsheets/d/1XOTG14SyH4OqPo2nw87Pef7KG7MGLMg5KEdQBf5c3io/gviz/tq?tqx=out:json&sheet=Rome&headers=1&cb=$\\(date +%s\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "mcp__sandbox__sheets__get_metadata",
+      "mcp__sandbox__sheets__add_sheet",
+      "Bash(curl -s \"https://docs.google.com/spreadsheets/d/1XOTG14SyH4OqPo2nw87Pef7KG7MGLMg5KEdQBf5c3io/gviz/tq?tqx=out:json&sheet=Fillmore%20%26%20Ventura&headers=1\")",
+      "Bash(python3 -m http.server 8788)",
+      "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless=new --disable-gpu --dump-dom --virtual-time-budget=10000 http://localhost:8788/fillmore-ventura.html)",
+      "Bash(kill %1)",
+      "Bash(rm /Users/phillipbensaid/mappy/photos/fillmore-ventura/sunflower-kitchen-and-bakery-*.jpg)",
+      "WebFetch(domain:downtownventura.org)",
+      "Bash(node /private/tmp/claude-501/-Users-phillipbensaid-mappy/43750a3f-c602-499d-aca6-eb8b96940fee/scratchpad/make-fv.mjs)",
+      "Bash(python3 -m http.server 8789)",
+      "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless=new --disable-gpu --dump-dom --virtual-time-budget=10000 http://localhost:8789/fillmore-ventura.html)",
+      "Bash(python3 -m http.server 8790)",
+      "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless=new --disable-gpu --dump-dom --virtual-time-budget=10000 http://localhost:8790/fillmore-ventura.html)",
+      "Bash(git fetch *)"
     ]
   }
 }
